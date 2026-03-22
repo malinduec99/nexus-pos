@@ -1,4 +1,4 @@
-import './style.css';
+﻿import './style.css';
 import { db, auth } from './firebase.js';
 import {
     collection,
@@ -18,7 +18,7 @@ import { onAuthStateChanged } from "firebase/auth";
 const urlParams = new URLSearchParams(window.location.search);
 const pathParts = window.location.pathname.split('/').filter(p => p !== '');
 const slugFromPath = (pathParts[0] && !['index.html', 'track', 'admin', 'login.html'].includes(pathParts[0])) ? pathParts[0] : null;
-const currentStoreId = urlParams.get('store') || slugFromPath || 'mec-book-shop';
+const currentStoreId = urlParams.get('store') || slugFromPath || 'mec-nexus';
 
 window.storeInfo = null;
 getDocs(query(collection(db, 'stores'), where('slug', '==', currentStoreId))).then(snap => {
@@ -302,3 +302,4 @@ window.printFromTrack = () => {
 document.getElementById('back-btn').addEventListener('click', () => {
     window.hideOrderDetails();
 });
+

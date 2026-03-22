@@ -1,4 +1,4 @@
-import './style.css'
+﻿import './style.css'
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db, auth } from './firebase.js';
 import {
@@ -51,7 +51,7 @@ const urlParams = new URLSearchParams(window.location.search);
 const pathParts = window.location.pathname.split('/').filter(p => p !== '');
 // First path part is the slug, unless it's a known page like 'track' or 'admin'
 const slugFromPath = (pathParts[0] && !['index.html', 'track', 'admin', 'login.html'].includes(pathParts[0])) ? pathParts[0] : null;
-window.currentStoreId = urlParams.get('store') || slugFromPath || 'mec-book-shop';
+window.currentStoreId = urlParams.get('store') || slugFromPath || 'mec-nexus';
 console.log("Current Store ID:", window.currentStoreId);
 
 window.currentStoreData = null;
@@ -92,7 +92,7 @@ function updateStoreBranding() {
 
   // Update Hero Subtitle if it's the default shop
   const heroSub = document.getElementById('hero-subtitle');
-  if (heroSub && window.currentStoreId === 'mec-book-shop') {
+  if (heroSub && window.currentStoreId === 'mec-nexus') {
     heroSub.innerText = "Your premium destination for books, stationery, and creative supplies.";
   }
 
@@ -248,7 +248,7 @@ onSnapshot(productsCol, (snapshot) => {
   products = allProducts.filter(p => {
     const isOurStore = (p.storeId === window.currentStoreId) ||
       (p.storeId === 'mec-pos-shop') || 
-      (!p.storeId && (window.currentStoreId === 'mec-book-shop' || window.currentStoreId === 'master'));
+      (!p.storeId && (window.currentStoreId === 'mec-nexus' || window.currentStoreId === 'master'));
     
     // Hide Service and Technical products from web storefront
     const isVisibleMode = (p.mode === 'Shop' || p.mode === 'Warehouse');
@@ -1443,3 +1443,4 @@ window.setAssistantLang = (lang) => {
 };
 
 initGeminiAssistant();
+

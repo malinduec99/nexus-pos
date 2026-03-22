@@ -1,4 +1,4 @@
-// [MANDATORY] Run .\MASTER_SYNC.bat after any changes to this file!
+﻿// [MANDATORY] Run .\MASTER_SYNC.bat after any changes to this file!
 import './admin-style.css';
 import { db, auth } from './firebase.js';
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -180,7 +180,7 @@ if (urlStore) {
 }
 
 // Helper to get current active store ID
-window.getStoreId = () => sessionStorage.getItem('userStoreId') || sessionStorage.getItem('tempStoreSlug') || 'mec-book-shop';
+window.getStoreId = () => sessionStorage.getItem('userStoreId') || sessionStorage.getItem('tempStoreSlug') || 'mec-nexus';
 
 // --- ERP System Logging ---
 window.logAction = async (action, details = "") => {
@@ -284,11 +284,11 @@ window.filterByStore = (list) => {
     if (!list) return [];
     
     // Explicitly allow main MEC slugs to see data without a storeId (backward compatibility)
-    const isMainMec = (storeId === 'mec-book-shop' || storeId === 'mec-pos-shop' || storeId === 'mec-pos' || storeId === 'master');
+    const isMainMec = (storeId === 'mec-nexus' || storeId === 'mec-pos-shop' || storeId === 'mec-pos' || storeId === 'master');
     
     const filtered = list.filter(item => 
         (item.storeId === storeId) || 
-        (isMainMec && (!item.storeId || item.storeId === 'mec-book-shop' || item.storeId === 'mec-pos-shop'))
+        (isMainMec && (!item.storeId || item.storeId === 'mec-nexus' || item.storeId === 'mec-pos-shop'))
     );
     
     if (list.length > 0 && filtered.length === 0) {
@@ -308,7 +308,7 @@ function updateLoginBranding() {
     let brandName = window.storeInfo?.name || 'MEC POS';
     
     // Only show MEC Book Shop if it's explicitly set via URL/slug, otherwise use the universal brand
-    const isExplicitMEC = sessionStorage.getItem('tempStoreSlug') === 'mec-book-shop';
+    const isExplicitMEC = sessionStorage.getItem('tempStoreSlug') === 'mec-nexus';
     if (!window.storeInfo && !isExplicitMEC) brandName = 'MEC POS';
 
     if (loginTitle) loginTitle.innerText = brandName;
@@ -398,7 +398,7 @@ loginBtn?.addEventListener('click', () => {
         sessionStorage.setItem('userEmail', userInput);
         sessionStorage.setItem('userName', 'Super Admin');
         sessionStorage.setItem('userBranchId', 'Global');
-        sessionStorage.setItem('userStoreId', sessionStorage.getItem('tempStoreSlug') || 'mec-book-shop'); 
+        sessionStorage.setItem('userStoreId', sessionStorage.getItem('tempStoreSlug') || 'mec-nexus'); 
         showAdminActions();
     } else {
         // Check staff members (using original casing for passwords but lowered for usernames)
@@ -410,7 +410,7 @@ loginBtn?.addEventListener('click', () => {
             sessionStorage.setItem('userName', staff.name || staff.username);
             sessionStorage.setItem('userId', staff.docId);
             sessionStorage.setItem('userBranchId', staff.branchId || 'Global');
-            sessionStorage.setItem('userStoreId', staff.storeId || 'mec-book-shop');
+            sessionStorage.setItem('userStoreId', staff.storeId || 'mec-nexus');
             showAdminActions();
         } else {
             const errorMsg = document.getElementById('login-error');
@@ -486,8 +486,8 @@ function showAdminActions() {
         // Fallback search: try to find by slug, or default to first if it's the main mec shop
         let storeInfo = stores.find(s => s.slug === currentStoreId);
         
-        if (!storeInfo && (currentStoreId === 'mec-book-shop' || currentStoreId === 'mec-pos-shop')) {
-            storeInfo = stores.find(s => s.slug === 'mec-pos-shop' || s.slug === 'mec-book-shop') || stores[0];
+        if (!storeInfo && (currentStoreId === 'mec-nexus' || currentStoreId === 'mec-pos-shop')) {
+            storeInfo = stores.find(s => s.slug === 'mec-pos-shop' || s.slug === 'mec-nexus') || stores[0];
         }
 
         if (storeInfo) {
@@ -1204,19 +1204,19 @@ function renderStoresUI(stores) {
 }
 
 window.copyStoreAdminLink = (slug) => {
-    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-book-shop.web.app';
+    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-nexus.web.app';
     const url = `${baseUrl}/admin/${slug}`;
     navigator.clipboard.writeText(url);
     window.showToast("Admin link copied!", "info");
 };
 
 window.openStoreDashboard = (slug) => {
-    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-book-shop.web.app';
+    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-nexus.web.app';
     window.open(`${baseUrl}/admin/${slug}`, '_blank');
 };
 
 window.openStoreWebsite = (slug) => {
-    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-book-shop.web.app';
+    const baseUrl = window.location.hostname.includes('localhost') ? window.location.origin : 'https://mec-nexus.web.app';
     window.open(`${baseUrl}/${slug}`, '_blank');
 };
 
@@ -3003,7 +3003,7 @@ function getBillPlainText() {
     text += `*TOTAL PAYABLE: LKR ${payable}*\n`;
     text += `Paid: LKR ${paid}\n`;
     text += `Change: LKR ${change}\n\n`;
-    text += `Track Order: mec-book-shop.web.app\n`;
+    text += `Track Order: mec-nexus.web.app\n`;
     text += `Thank you for choosing MEC Network!`;
     return text;
 }
@@ -3466,10 +3466,10 @@ window.updateApp = async () => {
         }
         // Force the page to navigate to the online URL to grab the newest code
         setTimeout(() => {
-            window.location.href = 'https://mec-book-shop.web.app/admin?v=' + Date.now();
+            window.location.href = 'https://mec-nexus.web.app/admin?v=' + Date.now();
         }, 1200);
     } catch (e) { 
-        window.location.href = 'https://mec-book-shop.web.app/admin'; 
+        window.location.href = 'https://mec-nexus.web.app/admin'; 
     }
 };
 
@@ -4386,7 +4386,7 @@ function renderAdminEmployeesUI(employees) {
 
     const filtered = employees.filter(emp => {
         // Store Filter (SaaS boundaries)
-        const isMainMec = (storeId === 'mec-book-shop' || storeId === 'mec-pos-shop' || storeId === 'mec-pos' || storeId === 'master');
+        const isMainMec = (storeId === 'mec-nexus' || storeId === 'mec-pos-shop' || storeId === 'mec-pos' || storeId === 'master');
         
         if (emp.storeId && emp.storeId !== storeId) return false;
         if (!emp.storeId && !isMainMec) return false;
@@ -4879,3 +4879,4 @@ window.saveWebSEO = async () => {
         window.showToast("Error saving SEO settings", "error");
     }
 };
+

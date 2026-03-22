@@ -1,15 +1,15 @@
 {
   "projects": {
-    "default": "mec-book-shop"
+    "default": "mec-nexus"
   },
   "targets": {
-    "mec-book-shop": {
+    "mec-nexus": {
       "hosting": {
         "shop": [
-          "mec-book-shop"
+          "mec-nexus"
         ],
         "platform": [
-          "mec-book-shop"
+          "mec-nexus"
         ],
         "portal": [
           "mec-pos-shop"

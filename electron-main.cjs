@@ -1,4 +1,4 @@
-const { app, BrowserWindow, shell, Menu } = require('electron');
+﻿const { app, BrowserWindow, shell, Menu } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -92,7 +92,7 @@ function createWindow() {
     } else {
         // PREFER ONLINE: Load the live hosted URL for automatic updates
         // Add cache-buster timestamp to ensure fresh load
-        const liveUrl = `https://mec-book-shop.web.app/admin?v=${Date.now()}`;
+        const liveUrl = `https://mec-nexus.web.app/admin?v=${Date.now()}`;
         mainWindow.loadURL(liveUrl).catch(() => {
             console.log("Offline: Loading local fallback...");
             mainWindow.loadFile(path.join(__dirname, 'dist/admin.html'));
@@ -133,3 +133,4 @@ app.on('activate', () => {
         createWindow();
     }
 });
+

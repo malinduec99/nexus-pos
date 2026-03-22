@@ -3,13 +3,13 @@ import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/fires
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCFGweYcgmcfP5zS6M1ytOfKYKUbHfsols",
-    authDomain: "mec-book-shop.firebaseapp.com",
-    projectId: "mec-book-shop",
-    storageBucket: "mec-book-shop.firebasestorage.app",
-    messagingSenderId: "721921338336",
-    appId: "1:721921338336:web:bcd6215a75b163145cd985",
-    measurementId: "G-M0GZ9BXGBV"
+  apiKey: "AIzaSyBtspqm6Zcdf2McOE8ZUElljFUiNhVn8gQ",
+  authDomain: "mec-nexus.firebaseapp.com",
+  projectId: "mec-nexus",
+  storageBucket: "mec-nexus.firebasestorage.app",
+  messagingSenderId: "421466126701",
+  appId: "1:421466126701:web:c00e13d9344b9877eb0264",
+  measurementId: "G-36E8KS8MZK"
 };
 
 const app = initializeApp(firebaseConfig);
