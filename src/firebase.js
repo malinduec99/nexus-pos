@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, enableMultiTabIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, enableMultiTabIndexedDbPersistence, query, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -15,6 +15,16 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
+// --- SaaS Multi-Tenancy Helper ---
+window.getShopId = () => {
+    // Priority: Session (Logged in user) > LocalStorage (Remembered) > Default MEC
+    return sessionStorage.getItem('active_shop_id') || localStorage.getItem('active_shop_id') || '00001';
+};
+
+window.withShop = (col) => {
+    return query(col, where('shop_id', '==', window.getShopId()));
+};
 
 // Enable Offline Sync
 if (typeof window !== 'undefined') {

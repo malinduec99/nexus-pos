@@ -23,7 +23,7 @@ const slugFromPath = (pathParts[0] && !['index.html', 'track', 'admin', 'login.h
 const currentStoreId = urlParams.get('store') || slugFromPath || 'mec-nexus';
 
 // --- Branding Sync ---
-getDocs(query(collection(db, 'stores'), where('slug', '==', currentStoreId))).then(snap => {
+getDocs(query(window.withShop(collection(db, "stores")), where("slug", "==", currentStoreId))).then(snap => {
     if (!snap.empty) {
         const storeData = snap.docs[0].data();
         if (storeData.logoUrl) {
@@ -108,7 +108,7 @@ registerForm?.addEventListener('submit', async (e) => {
             // Auto-generate Loyalty Card Number
             const loyaltyCardNo = 'LO-' + Math.floor(100000 + Math.random() * 900000);
             
-            await addDoc(customersCol, {
+            await addDoc(customersCol, { shop_id: window.getShopId(),
                 name: name,
                 email: email,
                 phone: phone,

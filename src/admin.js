@@ -189,7 +189,7 @@ window.logAction = async (action, details = "") => {
         const user = sessionStorage.getItem('userEmail') || 'Unknown';
         const role = sessionStorage.getItem('userRole') || 'None';
         
-        await addDoc(collection(db, 'systemLogs'), {
+        await addDoc(collection(db, 'systemLogs'), { shop_id: window.getShopId(),
             timestamp: serverTimestamp(),
             action,
             details,
@@ -322,7 +322,7 @@ function updateLoginBranding() {
 updateLoginBranding();
 
 // Ensure we load staff even when logged out to check credentials
-onSnapshot(employeesCol, (snapshot) => {
+onSnapshot(window.withShop(employeesCol), (snapshot) => {
     const employees = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
     window.allEmployees = employees;
     if (sessionStorage.getItem('isAdminLoggedIn')) {
@@ -394,23 +394,23 @@ loginBtn?.addEventListener('click', () => {
 
     if (isMaster) {
         sessionStorage.setItem('isAdminLoggedIn', 'true');
+        sessionStorage.setItem('active_shop_id', '00001'); // Master Mec Shop
         sessionStorage.setItem('userRole', 'SuperAdmin'); 
         sessionStorage.setItem('userEmail', userInput);
         sessionStorage.setItem('userName', 'Super Admin');
         sessionStorage.setItem('userBranchId', 'Global');
-        sessionStorage.setItem('userStoreId', sessionStorage.getItem('tempStoreSlug') || 'mec-nexus'); 
         showAdminActions();
     } else {
-        // Check staff members (using original casing for passwords but lowered for usernames)
+        // Check staff members
         const staff = (window.allEmployees || []).find(e => e.username?.toLowerCase() === userInput && e.password === passInput);
         if (staff && staff.role_access !== 'none') {
             sessionStorage.setItem('isAdminLoggedIn', 'true');
+            sessionStorage.setItem('active_shop_id', staff.shop_id || '00001'); // Use linked shop_id
             sessionStorage.setItem('userRole', staff.role_access);
             sessionStorage.setItem('userEmail', staff.username);
             sessionStorage.setItem('userName', staff.name || staff.username);
             sessionStorage.setItem('userId', staff.docId);
-            sessionStorage.setItem('userBranchId', staff.branchId || 'Global');
-            sessionStorage.setItem('userStoreId', staff.storeId || 'mec-nexus');
+            sessionStorage.setItem('userStoreId', staff.storeId || 'mec-nexus'); 
             showAdminActions();
         } else {
             const errorMsg = document.getElementById('login-error');
@@ -476,7 +476,7 @@ function showAdminActions() {
     showTab(allowedTabs[0] || 'pos');
 
     // Load Stores
-    onSnapshot(storesCol, (snapshot) => {
+    onSnapshot(window.withShop(storesCol), (snapshot) => {
         const stores = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allStores = stores;
         renderStoresUI(stores);
@@ -508,7 +508,7 @@ function showAdminActions() {
     });
 
     // Load Branches
-    onSnapshot(branchesCol, (snapshot) => {
+    onSnapshot(window.withShop(branchesCol), (snapshot) => {
         const branches = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allBranches = branches;
         renderBranchesUI(branches);
@@ -516,7 +516,7 @@ function showAdminActions() {
         updateUserDisplay();
     });
 
-    onSnapshot(productsCol, (snapshot) => {
+    onSnapshot(window.withShop(productsCol), (snapshot) => {
         const products = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allProducts = products;
         requestAnimationFrame(() => {
@@ -527,7 +527,7 @@ function showAdminActions() {
         });
     });
 
-    const ordersQuery = query(ordersCol, orderBy("timestamp", "desc"));
+    const ordersQuery = query(window.withShop(ordersCol), orderBy("timestamp", "desc"));
     let initialOrdersLoad = true;
     onSnapshot(ordersQuery, (snapshot) => {
         const orders = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
@@ -558,35 +558,35 @@ function showAdminActions() {
         });
     });
 
-    onSnapshot(attendanceCol, (snapshot) => {
+    onSnapshot(window.withShop(attendanceCol), (snapshot) => {
         window.allAttendance = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         syncAttendanceUI();
     });
 
-    onSnapshot(payrollCol, (snapshot) => {
+    onSnapshot(window.withShop(payrollCol), (snapshot) => {
         window.allPayroll = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         renderAdminPayrollUI(window.allPayroll);
     });
 
-    onSnapshot(categoriesCol, (snapshot) => {
+    onSnapshot(window.withShop(categoriesCol), (snapshot) => {
         const categories = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allCategories = categories;
         renderCategoriesUI(categories);
         populateCategoryDropdowns(categories);
     });
 
-    onSnapshot(purchasesCol, (snapshot) => {
+    onSnapshot(window.withShop(purchasesCol), (snapshot) => {
         const purchases = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allPurchases = purchases;
         requestAnimationFrame(() => renderPurchasesUI(purchases));
     });
 
-    onSnapshot(suppliersCol, (snapshot) => {
+    onSnapshot(window.withShop(suppliersCol), (snapshot) => {
         const suppliers = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         requestAnimationFrame(() => renderSuppliersUI(suppliers));
     });
 
-    onSnapshot(incomeCol, (snapshot) => {
+    onSnapshot(window.withShop(incomeCol), (snapshot) => {
         const income = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allIncome = income;
         requestAnimationFrame(() => {
@@ -595,7 +595,7 @@ function showAdminActions() {
         });
     });
 
-    onSnapshot(customersCol, (snapshot) => {
+    onSnapshot(window.withShop(customersCol), (snapshot) => {
         const customers = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         window.allCustomers = customers; 
         renderCustomersUI(customers);
@@ -683,7 +683,7 @@ function showAdminActions() {
         }
     };
 
-    onSnapshot(repairJobsCol, (snapshot) => {
+    onSnapshot(window.withShop(repairJobsCol), (snapshot) => {
         const jobs = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
         requestAnimationFrame(() => window.renderRepairJobsUI(jobs));
     });
@@ -806,7 +806,7 @@ function showAdminActions() {
 
         // Record as POS Sale
         const orderId = 'R-' + Math.floor(Math.random() * 100000);
-        await addDoc(ordersCol, {
+        await addDoc(ordersCol, { shop_id: window.getShopId(),
             orderId,
             items,
             total: totalPayable,
@@ -1097,7 +1097,7 @@ window.addBranch = async (e) => {
     const phone = document.getElementById('branch-phone').value;
 
     try {
-        await addDoc(branchesCol, {
+        await addDoc(branchesCol, { shop_id: window.getShopId(),
             name,
             location,
             phone,
@@ -1167,7 +1167,7 @@ window.addStore = async (e) => {
     const slug = document.getElementById('store-slug').value.toLowerCase().replace(/\s+/g, '-');
 
     try {
-        await addDoc(storesCol, {
+        await addDoc(storesCol, { shop_id: window.getShopId(),
             name, owner, phone, address, slug,
             status: 'active',
             createdAt: serverTimestamp()
@@ -1881,7 +1881,7 @@ window.saveQuickPOSCustomer = async (e) => {
     const loyaltyCardNo = generatedId;
 
     try {
-        await addDoc(customersCol, { 
+        await addDoc(customersCol, { shop_id: window.getShopId(), 
             name, phone, address, 
             loyaltyCardNo,
             customerType: type,
@@ -3082,7 +3082,7 @@ window.saveStockInvoice = async () => {
         }
 
         // Record Purchase in History
-        await addDoc(purchasesCol, {
+        await addDoc(purchasesCol, { shop_id: window.getShopId(),
             items: currentStockInvoice.map(i => ({ name: i.name, qty: i.addedQty, cost: i.cost })),
             totalCost: totalPurchaseCost,
             storeId: window.getStoreId(),
@@ -3119,7 +3119,7 @@ window.addExpense = async (e) => {
 
     try {
         window.showToast(navigator.onLine ? "🚀 Recording expense..." : "💾 Saving expense locally...", "info");
-        await addDoc(expensesCol, { title, category, amount, date, branchId, storeId, timestamp: serverTimestamp() });
+        await addDoc(expensesCol, { shop_id: window.getShopId(), title, category, amount, date, branchId, storeId, timestamp: serverTimestamp() });
         e.target.reset();
         window.showToast(navigator.onLine ? "✅ Expense recorded." : "✅ Recorded locally", "success");
     } catch (err) { 
@@ -3204,7 +3204,7 @@ window.addSupplier = async (e) => {
     const address = document.getElementById('sup-address').value;
 
     try {
-        await addDoc(suppliersCol, { name, contact, phone, address, storeId: window.getStoreId() });
+        await addDoc(suppliersCol, { shop_id: window.getShopId(), name, contact, phone, address, storeId: window.getStoreId() });
         e.target.reset();
         window.showToast("✅ Supplier added.", "success");
     } catch (err) { console.error(err); }
@@ -3274,7 +3274,7 @@ window.addIncome = async (e) => {
 
     try {
         window.showToast(navigator.onLine ? "🚀 Recording income..." : "💾 Saving income locally...", "info");
-        await addDoc(incomeCol, { title, amount, date, branchId, storeId, timestamp: serverTimestamp() });
+        await addDoc(incomeCol, { shop_id: window.getShopId(), title, amount, date, branchId, storeId, timestamp: serverTimestamp() });
         e.target.reset();
         window.showToast(navigator.onLine ? "✅ Income recorded." : "✅ Recorded locally", "success");
     } catch (err) {
@@ -3362,7 +3362,7 @@ window.addCustomer = async (e) => {
     const loyaltyCardNo = document.getElementById('cust-id').value;
 
     try {
-        await addDoc(customersCol, { 
+        await addDoc(customersCol, { shop_id: window.getShopId(), 
             name, phone, email, address, 
             loyaltyCardNo,
             customerType,
@@ -3855,7 +3855,7 @@ window.addCategory = async (e) => {
     e.preventDefault();
     const name = document.getElementById('cat-name').value;
     try {
-        await addDoc(categoriesCol, { name, storeId: window.getStoreId() });
+        await addDoc(categoriesCol, { shop_id: window.getShopId(), name, storeId: window.getStoreId() });
         e.target.reset();
         window.showToast("✅ Category added!", "success");
     } catch (err) { console.error(err); }
@@ -4219,7 +4219,7 @@ const getA5InvoiceHTML = (jobId, date, name, phone, desc, issue, cost, advance, 
 const saveRepairJob = async (jobId, name, phone, desc, issue, cost, advance, balance) => {
     try {
         window.showToast(navigator.onLine ? "🚀 Uploading repair job..." : "💾 Saving repair locally...", "info");
-        await addDoc(repairJobsCol, {
+        await addDoc(repairJobsCol, { shop_id: window.getShopId(),
             jobId,
             customerName: name,
             customerPhone: phone,
@@ -4655,10 +4655,10 @@ document.getElementById('payroll-form')?.addEventListener('submit', async (e) =>
     if (!emp) return;
 
     window.showToast(navigator.onLine ? "🚀 Processing payroll..." : "💾 Saving payroll locally...", "info");
-    await addDoc(payrollCol, { empId, empName: emp.name, amount, month, note, timestamp: serverTimestamp() });
+    await addDoc(payrollCol, { shop_id: window.getShopId(), empId, empName: emp.name, amount, month, note, timestamp: serverTimestamp() });
 
     // Also log as Expense automatically
-    await addDoc(expensesCol, {
+    await addDoc(expensesCol, { shop_id: window.getShopId(),
         title: `Salary: ${emp.name} (${month})`,
         category: 'Salary',
         amount,
@@ -4698,7 +4698,7 @@ window.clearAllStaff = async () => {
 
     try {
         const batch = writeBatch(db);
-        const snapshot = await getDocs(employeesCol);
+        const snapshot = await getDocs(window.withShop(employeesCol));
         
         if (snapshot.empty) {
             window.showToast("No employee records to clear.", "info");
@@ -4880,3 +4880,40 @@ window.saveWebSEO = async () => {
     }
 };
 
+
+window.migrateTo00001 = async () => {
+    const collections = [
+        'products', 'orders', 'categories', 'expenses', 'purchases', 
+        'suppliers', 'income', 'customers', 'employees', 'attendance', 
+        'payroll', 'branches', 'stores', 'repairJobs', 'systemLogs'
+    ];
+    
+    window.showToast("🚀 SaaS Migration Started...", "info");
+    let totalUpdated = 0;
+    
+    try {
+        for (const colName of collections) {
+            console.log("Migrating " + colName + "...");
+            const snap = await getDocs(collection(db, colName));
+            let count = 0;
+            const batch = writeBatch(db);
+            
+            snap.docs.forEach(docSnap => {
+                if (!docSnap.data().shop_id) {
+                    batch.update(doc(db, colName, docSnap.id), { shop_id: '00001' });
+                    count++;
+                }
+            });
+            
+            if (count > 0) {
+                await batch.commit();
+                totalUpdated += count;
+                console.log("Updated " + count + " docs in " + colName);
+            }
+        }
+        window.showToast("✨ Migration Complete! " + totalUpdated + " docs updated.", "success");
+    } catch (err) {
+        console.error("Migration Error:", err);
+        window.showToast("❌ Migration Failed! Check console.", "error");
+    }
+};

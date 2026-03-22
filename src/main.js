@@ -1,4 +1,4 @@
-﻿import './style.css'
+import './style.css'
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { db, auth } from './firebase.js';
 import {
@@ -61,6 +61,8 @@ const storesRef = collection(db, 'stores');
 getDocs(query(storesRef, where('slug', '==', window.currentStoreId))).then(snap => {
   if (!snap.empty) {
     window.currentStoreData = snap.docs[0].data();
+    const activeShopId = window.currentStoreData.shop_id || (window.currentStoreId === 'mec-nexus' ? '00001' : null);
+    if (activeShopId) sessionStorage.setItem('active_shop_id', activeShopId);
   }
   updateStoreBranding();
 });
@@ -243,7 +245,7 @@ let seededRandomOrder = null;
 const cartCountElement = document.getElementById('cart-count');
 
 // Listen for Products Live
-onSnapshot(productsCol, (snapshot) => {
+onSnapshot(window.withShop(productsCol), (snapshot) => {
   const allProducts = snapshot.docs.map(doc => ({ ...doc.data(), docId: doc.id }));
   products = allProducts.filter(p => {
     const isOurStore = (p.storeId === window.currentStoreId) ||
