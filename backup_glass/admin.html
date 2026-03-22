@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEC POS</title>
+
+    <link rel="icon" href="/logo.png">
+    <link rel="stylesheet" href="/src/admin-style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/html5-qrcode.min.js"></script>
+    <style>
+        /* POS v2 Fullscreen Mode Styles */
+        body.pos-fullscreen-mode {
+            overflow: hidden;
+            background: #020617;
+        }
+
+        body.pos-fullscreen-mode .admin-nav,
+        body.pos-fullscreen-mode .admin-header {
+            display: none !important;
+        }
+
+        body.pos-fullscreen-mode .admin-main {
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        body.pos-fullscreen-mode #section-pos {
+            height: 100vh;
+            border-radius: 0;
+            margin: 0;
+            padding: 10px;
+            max-width: none;
+        }
+
+        .exit-pos-btn {
+            display: none;
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        body.pos-fullscreen-mode .exit-pos-btn {
+            display: block;
+        }
+
+        .pos-header-v2 {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .pos-header-cust input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-weight: 700;
+            color: white;
+            outline: none;
+            width: 220px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.9rem;
+        }
+
+        .pos-header-cust input:focus {
+            border-color: var(--accent-blue);
+            background: white;
+            box-shadow: 0 0 0 4px rgba(0, 174, 239, 0.1);
+            width: 280px;
+        }
+
+        .pos-header-cust input::placeholder {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        /* --- SPLASH SCREEN STYLES (Requirement Part 2) --- */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #020617;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            color: white;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .splash-loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #ffffff33;
+            border-top: 5px solid #ffffff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="admin-body">
+
+    <!-- Splash Screen (Auto Update Feedback) -->
+    <div id="splash-screen">
+        <div class="splash-loader"></div>
+        <h3 style="margin: 0; font-weight: 600;">System Checking Updates...</h3>
+        <p style="font-size: 0.85rem; opacity: 0.7; margin-top: 10px;">Syncing with MEC POS</p>
+    </div>
+
+    <!-- Login Section -->
+    <section id="login-section" class="admin-login-screen">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/logo.png" alt="MEC Logo">
+                        <h2>MEC POS</h2>
+                        <p>Universal Merchant Portal (v1.4.4)</p>
+            </div>
+            <div class="login-body">
+                <div class="input-group">
+                    <label id="login-version-label">Username / Email</label>
+                    <input type="text" id="login-email" placeholder="Enter username / email">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" placeholder="••••••••">
+                </div>
+                <div id="login-error" class="error-msg" style="display:none;">⚠️ Invalid Credentials!</div>
+                <button id="login-btn" class="login-submit-btn">Authorize Access</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Admin Dashboard -->
+    <main id="admin-actions" style="display: none;">
+        <nav class="admin-nav">
+            <div class="nav-brand">
+                <img src="/logo.png" alt="MEC Logo">
+                <div class="brand-text">
+                    <span class="main">MEC POS</span>
+                    <span class="sub" id="admin-version-badge">v1.4.x - Managed</span>
+                </div>
+            </div>
+
+            <div class="nav-links">
+                <button class="nav-tab active" id="tab-orders" onclick="showTab('orders')">
+                    <span class="icon">📦</span> <span>Sales & Orders</span>
+                </button>
+                <button class="nav-tab" id="tab-pos" onclick="showTab('pos')">
+                    <span class="icon">💻</span> <span>POS Terminal</span>
+                </button>
+                
+                <div class="nav-label">Stock & Inventory</div>
+                <button class="nav-tab" id="tab-products" onclick="showTab('products')">
+                    <span class="icon">📚</span> <span>Product Master</span>
+                </button>
+                <button class="nav-tab" id="tab-stock" onclick="showTab('stock')">
+                    <span class="icon">📥</span> <span>Stock Inbound</span>
+                </button>
+                <button class="nav-tab" id="tab-categories" onclick="showTab('categories')">
+                    <span class="icon">🏷️</span> <span>Categories</span>
+                </button>
+
+                <div class="nav-label">Accounting & Finance</div>
+                <button class="nav-tab" id="tab-reports" onclick="showTab('reports')">
+                    <span class="icon">📊</span> <span>Final Reports</span>
+                </button>
+                <button class="nav-tab" id="tab-expenses" onclick="showTab('expenses')">
+                    <span class="icon">💸</span> <span>Expenditure</span>
+                </button>
+                <button class="nav-tab" id="tab-income" onclick="showTab('income')">
+                    <span class="icon">💰</span> <span>Misc Income</span>
+                </button>
+                
+                <div class="nav-label">Supply Chain</div>
+                <button class="nav-tab" id="tab-suppliers" onclick="showTab('suppliers')">
+                    <span class="icon">🤝</span> <span>Vendor Matrix</span>
+                </button>
+                <button class="nav-tab" id="tab-purchases" onclick="showTab('purchases')">
+                    <span class="icon">🛍️</span> <span>Purchase Logs</span>
+                </button>
+                <button class="nav-tab" id="tab-customers" onclick="showTab('customers')">
+                    <span class="icon">👥</span> <span>Customer CRM</span>
+                </button>
+                
+                <div class="nav-label">Technical Hub</div>
+                <button class="nav-tab" id="tab-repairs" onclick="showTab('repairs')">
+                    <span class="icon">🔧</span> <span>Service Center</span>
+                </button>
+                
+                <div class="nav-label">Operations</div>
+                <button class="nav-tab" id="tab-hrm" onclick="showTab('hrm')">
+                    <span class="icon">👔</span> <span>HRM & Payroll</span>
+                </button>
+                <button class="nav-tab" id="tab-branches" onclick="showTab('branches')">
+                    <span class="icon">🏢</span> <span>Branch Network</span>
+                </button>
+                
+                <div class="nav-label">System Admin</div>
+                <button class="nav-tab" id="tab-it-system" onclick="showTab('it-system')">
+                    <span class="icon">🛡️</span> <span>IT & Security</span>
+                </button>
+                <button class="nav-tab" id="tab-stores" onclick="showTab('stores')" style="display: none;">
+                    <span class="icon">🏪</span> <span>Managed Stores</span>
+                </button>
+                <button class="nav-tab" id="tab-appearance" onclick="showTab('appearance')">
+                    <span class="icon">✨</span> <span>Appearance</span>
+                </button>
+                <div class="nav-label">Development</div>
+                <button class="nav-tab" id="tab-web-dev" onclick="showTab('web-dev')">
+                    <span class="icon">🌐</span> <span>Website Studio</span>
+                </button>
+            </div>
+
+            <div class="nav-footer">
+                <!-- User info moved to header profile dropdown -->
+            </div>
+        </nav>
+
+        <div class="admin-main">
+            <header class="admin-header">
+                <div class="header-left">
+                    <h1 id="active-tab-title">Merchant Dashboard</h1>
+                    <p id="active-tab-subtitle">Global operations overview</p>
+                </div>
+                <div class="header-middle">
+                    <div id="branch-selector-wrapper" style="display: none;">
+                        <select id="global-branch-selector" onchange="switchBranchFilter(this.value)"
+                            style="padding: 10px 18px; border-radius: 50px; border: 1px solid #e2e8f0; font-weight: 800; color: var(--primary-blue); background: white; cursor: pointer; appearance: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                            <option value="All">All Branches</option>
+                        </select>
+                    </div>
+
+                    <div class="user-profile-nav" id="profile-trigger" style="display: none;">
+                        <div class="avatar-circle" id="admin-avatar" style="border-width: 2px; width: 40px; height: 40px;">M</div>
+                        <div class="profile-dropdown" id="profile-dropdown">
+                            <div class="dropdown-header">
+                                <div class="avatar-large" id="admin-avatar-large">M</div>
+                                <div class="user-details">
+                                    <span id="dropdown-email" class="email">...</span>
+                                    <span id="dropdown-role" class="role">Staff</span>
+                                </div>
+                            </div>
+                            <div class="dropdown-body">
+                                <button onclick="document.getElementById('profile-upload').click()" class="dropdown-item">
+                                    <span class="icon">🖼️</span> Change Profile Image
+                                </button>
+                                <input type="file" id="profile-upload" style="display:none" accept="image/*" onchange="handleProfileUpload(event)">
+                                <button id="logout-btn-real" class="dropdown-item logout-item">
+                                    <span class="icon">🚪</span> Log Out System
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <div id="clock-widget" class="clock-widget">
+                        <span id="clock-time">00:00:00</span>
+                        <span id="clock-date">Updating...</span>
+                    </div>
+
+                    <a href="/" target="_blank" class="secondary-action-btn"
+                        style="text-decoration:none; color:var(--text-dark); background:#f1f5f9; border:none; padding:10px 20px; border-radius:12px; font-weight:700;">
+                        <span>🌐 Website</span>
+                    </a>
+                    
+                    <button id="update-app-btn" onclick="updateApp()" class="update-system-btn">
+                        <span class="icon">🔄</span>
+                        <span class="update-text">Update</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ORDERS SECTION -->
+            <section id="section-orders" class="admin-tab-content">
+                <div class="content-header-actions">
+                    <div class="search-filter-bar">
+                        <button onclick="showTab('pos')" class="action-btn" style="background:#002060; color:white; margin-right: 15px; font-weight: bold; border:none; padding: 10px 15px; border-radius: 8px; cursor:pointer;">🏠 Back to POS</button>
+                        <input type="text" id="order-search-input" placeholder="Search ID, Name, Phone..."
+                            oninput="applyOrderFilters()">
+                        <select id="order-status-filter" onchange="applyOrderFilters()">
+                            <option value="All">All Statuses</option>
+                            <option value="Confirmed">Confirmed Only</option>
+                            <option value="Pending">Pending Only</option>
+                            <option value="Delivered">Delivered Only</option>
+                        </select>
+                        <input type="date" id="order-start-date" onchange="applyOrderFilters()">
+                        <input type="date" id="order-end-date" onchange="applyOrderFilters()">
+                        <button onclick="resetOrderFilters()" class="clear-btn">Clear</button>
+                    </div>
+                    <div class="export-controls">
+                        <button class="export-icon-btn csv" title="Export CSV" onclick="downloadOrdersCSV()">📄</button>
+                        <button class="export-icon-btn excel" title="Export Excel"
+                            onclick="downloadOrdersCSV()">📊</button>
+                        <button class="export-icon-btn pdf" title="Export PDF" onclick="downloadReportPDF()">📕</button>
+                        <button class="export-icon-btn print" title="Print List" onclick="window.print()">🖨️</button>
+                    </div>
+                </div>
+                <div id="admin-order-list" class="order-grid">
+                    <div class="loading-state">Synchronizing with cloud...</div>
+                </div>
+            </section>
+
+            <!-- POS TERMINAL SECTION (v2 Fullscreen Ready) -->
+            <section id="section-pos" class="admin-tab-content" style="display: none;">
+                <div class="pos-header-v2">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <button class="exit-pos-btn" onclick="exitPOSFullscreen()">EXIT POS (ESC)</button>
+                        <h2 style="margin: 0;">POS TERMINAL</h2>
+                        <a href="/" target="_blank"
+                            style="text-decoration:none; color:var(--text-muted); font-size:0.8rem; font-weight:700; background:#f1f5f9; padding:5px 12px; border-radius:30px;">
+                            🌐 Web Store
+                        </a>
+                    </div>
+
+                    <div class="pos-header-cust" style="display: flex; gap: 10px; align-items: center;">
+                        <select id="pos-pricing-mode" class="pricing-mode-select" onchange="updatePOSPricingMode()">
+                            <option value="retail">🛒 Retail Price</option>
+                            <option value="wholesale">📦 Wholesale Price</option>
+                            <option value="loyalty">💎 Loyalty Price</option>
+                        </select>
+                        <div id="pos-logged-in-user" style="padding: 10px 15px; border-radius: 12px; background: #f1f5f9; font-weight: 800; color: var(--primary-blue); border: 1px solid #e2e8f0; display: flex; align-items: center; gap: 5px;">
+                            👤 <span id="pos-user-name">Staff</span>
+                        </div>
+                        <div style="display: flex; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; max-width: 230px; padding-right: 10px;">
+                            <input type="text" id="pos-cust-phone" placeholder="Phone (F7)" onchange="lookupPOSCustomer(this.value)" style="border: none; outline: none; padding: 10px; width: 110px; font-weight: bold; background: transparent;">
+                            <span id="pos-cust-name-display" style="font-size: 0.75rem; color: var(--primary-blue); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px;"></span>
+                        </div>
+                        <div id="pos-cust-points-badge" style="display:none; background: #e0f2fe; color: #0369a1; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 0.8rem; border: 1px solid #bae6fd; white-space: nowrap;">
+                            💎 <span id="pos-cust-points-val">0</span> Points
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="pos-clock-widget" style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.1;">
+                            <span id="pos-clock-time" style="font-size: 1.1rem; font-weight: 800; color: var(--primary-blue); letter-spacing: -0.5px;">00:00:00</span>
+                            <span id="pos-clock-date" style="font-size: 0.7rem; font-weight: 700; color: var(--text-muted); opacity: 0.8;">Updating...</span>
+                        </div>
+
+                        <div id="pos-receipt-no" class="receipt-no-badge">R-000000</div>
+                    </div>
+                </div>
+
+                <div class="pos-container-v2">
+                    <!-- Left: Product Selection -->
+                    <div class="pos-left-side">
+                        <div class="pos-quick-bar">
+                            <button class="quick-btn" onclick="window.showCalculator()">🧮 Calculator (F1)</button>
+                            <button class="quick-btn" onclick="window.showRepairIntake()">🔧 Repair Bill (F2)</button>
+                            <button class="quick-btn" onclick="window.showTab('reports')">📈 Today Sales (F3)</button>
+                            <button class="quick-btn" onclick="window.showTab('orders')">📦 Orders (F4)</button>
+                        </div>
+                        <div class="pos-search-wrap" style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="pos-search" placeholder="Search product... (F6)"
+                                oninput="handlePOSSearch(this.value)" autofocus style="flex: 1;">
+                            <button class="action-btn" onclick="openScanner()" style="background: var(--primary-blue); color: white; padding: 10px 20px; border-radius: 12px; display: flex; align-items: center; gap: 8px; font-weight: 800; border: none;">
+                                📷 Scan & Add (F5)
+                            </button>
+                        </div>
+                        <div id="pos-product-list" class="pos-v2-grid">
+                            <!-- Items appear here -->
+                        </div>
+
+                        <div class="pos-shop-orders-sidebar">
+                            <h4
+                                style="margin: 0 0 10px 0; font-size: 0.8rem; text-transform: uppercase; color: #64748b;">
+                                Pending Shop Pickups</h4>
+                            <div id="pos-pending-shop-orders" class="pos-pending-list">
+                                <!-- Shop orders for pickup appear here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Billing Area -->
+                    <div class="pos-right-side">
+                        <div class="pos-bill-card">
+                            <div class="bill-header">
+                                <div class="bill-tabs-container" id="pos-bill-tabs">
+                                    <!-- Tabs appear here -->
+                                </div>
+                                <button class="add-bill-btn" onclick="addNewPOSBill()" title="New Bill (F12)">+</button>
+                            </div>
+
+                            <div class="bill-items-table-wrap">
+                                <table class="pos-bill-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item</th>
+                                            <th>Qty</th>
+                                            <th style="text-align: right;">Disc.</th>
+                                            <th style="text-align: right;">Price</th>
+                                            <th style="text-align: right;">Total</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pos-bill-items">
+                                        <!-- Bill rows -->
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="bill-summary">
+                                <div class="summary-row">
+                                    <span>Subtotal</span>
+                                    <span id="pos-subtotal">0.00</span>
+                                </div>
+                                <div class="summary-row" style="align-items: center;">
+                                    <span>Discount</span>
+                                    <div style="display: flex; flex-direction: column; gap: 5px; align-items: flex-end;">
+                                        <div style="display: flex; gap: 5px; align-items: center;">
+                                            <select id="pos-discount-type" onchange="calculatePOSTotals()"
+                                                style="padding: 5px; border-radius: 5px; border: 1px solid #e2e8f0; cursor: pointer;">
+                                                <option value="LKR">LKR</option>
+                                                <option value="%">%</option>
+                                            </select>
+                                            <input type="number" id="pos-bill-discount" value="0"
+                                                oninput="calculatePOSTotals()"
+                                                style="width: 85px; padding: 10px; font-weight: bold; border: 2px solid var(--accent-blue); border-radius: 8px;">
+                                        </div>
+                                        <button id="pos-apply-points-btn" style="display:none; padding: 3px 8px; font-size: 0.7rem; background: var(--primary-blue); color: white; border: none; border-radius: 5px; cursor: pointer;" onclick="applyLoyaltyPointsDiscount()">Apply Points (LKR)</button>
+                                    </div>
+                                </div>
+                                <div class="summary-row payable" style="border-top: 2px solid #e2e8f0; margin-top: 10px; padding-top: 10px;">
+                                    <span>PAYABLE</span>
+                                    <span class="amount">LKR <span id="pos-payable">0.00</span></span>
+                                </div>
+                            </div>
+
+                            <div class="pos-payment-actions">
+                                <button class="pay-btn cash" onclick="openPaymentModal()" style="width: 100%; font-size: 1.2rem; background: #0ea5e9;">💳 PAYMENT (F8)</button>
+                            </div>                            <div class="pos-secondary-actions">
+                                <button onclick="resetPOS()"
+                                    style="background: #f1f5f9; color: #64748b; width: 100%;">🔄
+                                    Clear Current Bill (F10)</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PRODUCTS / INVENTORY SECTION -->
+            <section id="section-products" class="admin-tab-content" style="display: none;">
+                <div class="section-header-v3">
+                    <h2 class="title">Inventory Management</h2>
+                    <p class="subtitle">Search, manage and organize your product catalog with ease.</p>
+                </div>
+
+                <div class="inventory-actions">
+                    <button class="add-btn"
+                        onclick="document.getElementById('product-form-modal').style.display='flex'">
+                        <span>+ Add New Product</span>
+                    </button>
+                    <div class="search-box-wrap" style="flex: 1; min-width: 300px; position: relative;">
+                        <input type="text" id="admin-product-search" placeholder="Search products, SKUs..." 
+                            oninput="window.filterAdminProducts(this.value)">
+                        <span style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 1.2rem; opacity: 0.4;">🔍</span>
+                    </div>
+                </div>
+                <div class="inventory-actions" style="margin-top: -10px; opacity: 0.9;">
+                    <div class="bulk-tools" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="file" id="bulk-file-input" accept=".csv" style="display:none;">
+                        <button onclick="document.getElementById('bulk-file-input').click()"
+                            class="secondary-action-btn">
+                            📁 CSV Select
+                        </button>
+                        <button id="bulk-upload-btn" class="secondary-action-btn">
+                            🚀 Bulk Upload
+                        </button>
+                        <button class="secondary-action-btn" onclick="downloadProductsCSV()">
+                            📥 Export Catalog
+                        </button>
+                        <button class="secondary-action-btn warning" onclick="removeDuplicateProducts()">
+                            🧹 Clean Duplicates
+                        </button>
+                        <span id="bulk-status"
+                            style="font-size: 0.8rem; font-weight: bold; color: var(--success-green);"></span>
+                    </div>
+                </div>
+                <div id="admin-product-list" class="inventory-grid">
+                    <!-- Products rendered via JS -->
+                </div>
+            </section>
+
+            <!-- STOCK IN SECTION -->
+            <section id="section-stock" class="admin-tab-content" style="display: none;">
+                <div class="stock-entry-card col-card">
+                    <div class="card-header">
+                        <h3>Inventory Update (Stock In)</h3>
+                        <p>Increase stock and update costs from supplier invoices</p>
+                    </div>
+                    <div class="card-body">
+                        <div class="stock-search-wrap">
+                            <input type="text" id="stock-search" placeholder="Search product to add to invoice..."
+                                oninput="searchProductsForStock(this.value)">
+                            <div id="stock-search-results" class="floating-results" style="display:none;"></div>
+                        </div>
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Unit Cost</th>
+                                    <th>Unit Price</th>
+                                    <th>Current Stock</th>
+                                    <th>Added Qty</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-invoice-list">
+                                <!-- Invoice rows -->
+                            </tbody>
+                        </table>
+                        <div class="stock-footer-actions">
+                            <button onclick="saveStockInvoice()" class="action-btn highlight">Update Master
+                                Inventory</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Repairs Section -->
+            <section id="section-repairs" style="display: none;" class="admin-tab-content">
+                <div class="header-actions">
+                    <h2 class="section-title">Repair Orders</h2>
+                    <button class="action-btn primary" onclick="window.showRepairIntake()">+ New Repair Bill</button>
+                </div>
+                <div class="card glass-card">
+                    <div class="table-container">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Job ID</th>
+                                    <th>Date</th>
+                                    <th>Customer</th>
+                                    <th>Phone</th>
+                                    <th>Item</th>
+                                    <th>Issue</th>
+                                    <th>Balance</th>
+                                    <th style="text-align: right;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-repairs-list"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CATEGORIES SECTION -->
+            <section id="section-categories" class="admin-tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Add New Category</h3>
+                        <form id="category-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Category Name</label>
+                                <input type="text" id="cat-name" placeholder="e.g. Science Fiction" required>
+                            </div>
+                            <button type="submit" class="action-btn primary">Save Category</button>
+                        </form>
+                    </div>
+                    <div class="col-card">
+                        <h3>Manage Categories</h3>
+                        <div id="admin-category-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- REPORTS SECTION -->
+            <section id="section-reports" class="admin-tab-content" style="display: none;">
+                <div class="reports-header-filter">
+                    <div class="date-filter">
+                        <button onclick="showTab('pos')" class="action-btn" style="background:#002060; color:white; margin-right: 15px; font-weight: bold;">🏠 Back to POS</button>
+                        <input type="date" id="report-start-date">
+                        <span>to</span>
+                        <input type="date" id="report-end-date">
+                        <button onclick="applyDateFilter()" class="action-btn">Filter</button>
+                        <button onclick="resetDateFilter()" class="clear-btn">Reset</button>
+                    </div>
+                    <button class="action-btn download" onclick="downloadReportPDF()">📄 Download PDF Report</button>
+                </div>
+
+                <div class="stats-overview-grid">
+                    <div class="stat-box success">
+                        <div>
+                            <h4>Daily Profit</h4>
+                            <div class="val"><span id="report-daily-profit">LKR 0</span> <span class="growth">↗
+                                    12%</span></div>
+                            <p>Daily Sales: <span id="report-daily-sales">0</span> | Cost: <span
+                                    id="report-daily-cost">0</span></p>
+                        </div>
+                        <div style="font-size: 2rem; opacity: 0.1;">📈</div>
+                    </div>
+                    <div class="stat-box primary">
+                        <div>
+                            <h4>Monthly Profit</h4>
+                            <div class="val"><span id="report-monthly-profit">LKR 0</span> <span class="growth">↗
+                                    24%</span></div>
+                            <p>Monthly Sales: <span id="report-monthly-sales">0</span> | Cost: <span
+                                    id="report-monthly-cost">0</span></p>
+                        </div>
+                        <div style="font-size: 2rem; opacity: 0.1;">📊</div>
+                    </div>
+                    <div class="stat-box info">
+                        <div>
+                            <h4>Yearly Profit</h4>
+                            <div class="val"><span id="report-yearly-profit">LKR 0</span> <span class="growth">↗
+                                    38%</span></div>
+                            <p>Yearly Sales: <span id="report-yearly-sales">0</span> | Cost: <span
+                                    id="report-yearly-cost">0</span></p>
+                        </div>
+                        <div style="font-size: 2rem; opacity: 0.1;">💎</div>
+                    </div>
+                </div>
+
+                <div class="charts-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                    <div class="chart-box" style="background:var(--glass-bg); padding:20px; border-radius:15px; box-shadow:var(--card-shadow); backdrop-filter:blur(10px);">
+                        <h4 style="margin-top:0; color:var(--primary-blue);">Monthly Sales Trend</h4>
+                        <canvas id="salesLineChart"></canvas>
+                    </div>
+                    <div class="chart-box" style="background:var(--glass-bg); padding:20px; border-radius:15px; box-shadow:var(--card-shadow); backdrop-filter:blur(10px);">
+                        <h4 style="margin-top:0; color:var(--primary-blue);">Sales vs Expenses</h4>
+                        <canvas id="salesBarChart"></canvas>
+                    </div>
+                    <div class="chart-box" style="background:var(--glass-bg); padding:20px; border-radius:15px; box-shadow:var(--card-shadow); backdrop-filter:blur(10px); grid-column: span 2; display:flex; justify-content:center;">
+                        <div style="width:50%;">
+                            <h4 style="margin-top:0; color:var(--primary-blue); text-align:center;">Revenue Breakdown</h4>
+                            <canvas id="revenuePieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="breakdown-section" style="margin-top: 3rem;">
+                    <h3>Sales Breakdown</h3>
+                    <div id="report-breakdown-list"></div>
+                </div>
+            </section>
+
+            <!-- EXPENSES SECTION -->
+            <section id="section-expenses" class="admin-tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Record New Expense</h3>
+                        <form id="expense-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Title / Description</label>
+                                <input type="text" id="exp-title" placeholder="e.g. Rent, Electricity" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Category</label>
+                                <select id="exp-category">
+                                    <option value="Rent">Rent</option>
+                                    <option value="Electricity">Electricity</option>
+                                    <option value="Water">Water</option>
+                                    <option value="Salary">Salary</option>
+                                    <option value="Inventory">Inventory Purchase</option>
+                                    <option value="Marketing">Marketing</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Amount (LKR)</label>
+                                <input type="number" id="exp-amount" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Date</label>
+                                <input type="date" id="exp-date" required>
+                            </div>
+                            <button type="submit" class="action-btn primary large">Save Expense</button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="content-header-actions" style="margin-bottom: 1rem;">
+                            <h3>Expense Log</h3>
+                            <div class="export-controls">
+                                <button class="export-icon-btn csv" title="Export CSV"
+                                    onclick="downloadExpensesCSV()">📄</button>
+                                <button class="export-icon-btn excel" title="Export Excel"
+                                    onclick="downloadExpensesCSV()">📊</button>
+                                <button class="export-icon-btn print" title="Print List"
+                                    onclick="window.print()">🖨️</button>
+                            </div>
+                        </div>
+                        <div id="admin-expense-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PURCHASES SECTION (History) -->
+            <section id="section-purchases" class="admin-tab-content" style="display: none;">
+                <div class="content-header-actions" style="margin-bottom: 2rem;">
+                    <h3>Inventory Purchase History</h3>
+                    <div class="export-controls">
+                        <button class="export-icon-btn csv" title="Export CSV"
+                            onclick="downloadPurchasesCSV()">📄</button>
+                        <button class="export-icon-btn excel" title="Export Excel"
+                            onclick="downloadPurchasesCSV()">📊</button>
+                    </div>
+                </div>
+                <div id="admin-purchase-history"></div>
+            </section>
+
+            <!-- SUPPLIERS SECTION -->
+            <section id="section-suppliers" class="admin-tab-content" style="display: none;">
+                <div class="sub-tab-nav">
+                    <button class="sub-tab active" data-section="suppliers" data-tab="list" onclick="showSubTab('suppliers', 'list')">Supplier Database</button>
+                    <button class="sub-tab" data-section="suppliers" data-tab="add" onclick="showSubTab('suppliers', 'add')">+ Record New Supplier</button>
+                </div>
+
+                <div id="suppliers-list-view" class="sub-tab-view">
+                    <div id="admin-supplier-list"></div>
+                </div>
+
+                <div id="suppliers-add-view" class="sub-tab-view" style="display: none;">
+                    <div class="col-card" style="max-width: 500px;">
+                        <h3>Supplier Registration</h3>
+                        <form id="supplier-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Supplier Name</label>
+                                <input type="text" id="sup-name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Contact Person</label>
+                                <input type="text" id="sup-contact">
+                            </div>
+                            <div class="input-group">
+                                <label>Phone Number</label>
+                                <input type="text" id="sup-phone">
+                            </div>
+                            <div class="input-group">
+                                <label>Address</label>
+                                <textarea id="sup-address"></textarea>
+                            </div>
+                            <button type="submit" class="action-btn primary large">Save Supplier Profile</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INCOME SECTION -->
+            <section id="section-income" class="admin-tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Record Extra Income</h3>
+                        <p>Non-sales related earnings (e.g. Services, Interest)</p>
+                        <form id="income-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Source / Description</label>
+                                <input type="text" id="inc-title" placeholder="e.g. Service Charge, Other" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Amount (LKR)</label>
+                                <input type="number" id="inc-amount" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Date</label>
+                                <input type="date" id="inc-date" required>
+                            </div>
+                            <button type="submit" class="action-btn primary large">Save Income</button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="content-header-actions" style="margin-bottom: 1rem;">
+                            <h3>Income Log</h3>
+                        </div>
+                        <div id="admin-income-list"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CUSTOMERS SECTION -->
+            <!-- Website Developer & Design Section -->
+    <section id="section-web-dev" class="admin-tab-content" style="display: none;">
+        <div class="admin-card-v2">
+            <div class="sub-tab-nav">
+                <button class="sub-tab active" data-section="web-dev" data-tab="branding" onclick="showSubTab('web-dev', 'branding')">Branding & Logo</button>
+                <button class="sub-tab" data-section="web-dev" data-tab="design" onclick="showSubTab('web-dev', 'design')">UI & Layout</button>
+                <button class="sub-tab" data-section="web-dev" data-tab="content" onclick="showSubTab('web-dev', 'content')">Web Content</button>
+                <button class="sub-tab" data-section="web-dev" data-tab="seo" onclick="showSubTab('web-dev', 'seo')">SEO & Analytics</button>
+            </div>
+
+            <!-- Branding Sub-tab -->
+            <div id="web-dev-branding-view" class="sub-tab-view animate-fade">
+                <form id="web-branding-form" class="admin-form-v2" onsubmit="window.saveWebBranding(event)">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div class="input-group">
+                            <label>Website Title</label>
+                            <input type="text" id="web-site-title" placeholder="e.g. MEC Book Shop - Online Store" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Website Tagline / Description</label>
+                            <input type="text" id="web-site-desc" placeholder="Your premium shopping destination.">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Main Website Logo (URL or Upload)</label>
+                        <div style="display: flex; gap: 15px; align-items: start;">
+                            <input type="text" id="web-site-logo-url" style="flex: 1;" placeholder="https://example.com/logo.png" oninput="const p=document.getElementById('web-logo-preview'); if(this.value){p.innerHTML=''; p.style.backgroundImage='url('+this.value+')'; p.style.backgroundSize='contain'; p.style.backgroundRepeat='no-repeat'; p.style.backgroundPosition='center';}else{p.innerHTML='🖼️'; p.style.backgroundImage='';}">
+                            <div style="text-align: center;">
+                                <div id="web-logo-preview" style="width: 80px; height: 80px; background: #f8fafc; border-radius: 12px; border: 2px dashed #cbd5e1; display: flex; align-items: center; justify-content: center; font-size: 2rem;">🖼️</div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);">Preview</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="action-btn primary large" style="margin-top: 2rem;">🚀 Update Website Branding</button>
+                </form>
+            </div>
+
+            <!-- UI & Layout Sub-tab -->
+            <div id="web-dev-design-view" class="sub-tab-view animate-fade" style="display: none;">
+                <div class="admin-form-v2">
+                    <div class="form-grid-3">
+                        <div class="input-group">
+                            <label>Primary Theme Color</label>
+                            <input type="color" id="web-theme-primary" value="#002060">
+                        </div>
+                        <div class="input-group">
+                            <label>Accent Design Color</label>
+                            <input type="color" id="web-theme-accent" value="#00aeef">
+                        </div>
+                        <div class="input-group">
+                            <label>Hero Background Type</label>
+                            <select id="web-hero-bg">
+                                <option value="gradient">Glassmorphism Gradient</option>
+                                <option value="solid">Solid Premium Blue</option>
+                                <option value="image">Custom Header Image</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: #f1f5f9; border-radius: 16px;">
+                        <h4 style="margin-top: 0; color: var(--primary-blue);">Advanced UI Controls</h4>
+                        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                            <label><input type="checkbox" id="web-show-featured" checked> Show Featured Collection</label>
+                            <label><input type="checkbox" id="web-show-reviews" checked> Show Customer Reviews</label>
+                            <label><input type="checkbox" id="web-show-services" checked> Show Service Tags</label>
+                            <label><input type="checkbox" id="web-enable-darkmode"> Enable Force Dark Mode</label>
+                        </div>
+                    </div>
+
+                    <button onclick="window.saveWebDesign()" class="action-btn primary large" style="margin-top: 2rem;">🎨 Apply Design Changes</button>
+                </div>
+            </div>
+
+            <!-- Web Content Sub-tab -->
+            <div id="web-dev-content-view" class="sub-tab-view animate-fade" style="display: none;">
+                <div class="admin-form-v2">
+                    <div class="input-group">
+                        <label>Main Hero Welcome Text</label>
+                        <input type="text" id="web-hero-welcome" placeholder="Welcome to MEC Book Shop">
+                    </div>
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Announcement Bar Text (Top of site)</label>
+                        <input type="text" id="web-announcement" placeholder="🚚 Free delivery on orders over LKR 5000!">
+                    </div>
+                    
+                    <div class="form-grid-3" style="margin-top: 1.5rem;">
+                        <div class="input-group">
+                            <label>Footer Copyright Name</label>
+                            <input type="text" id="web-footer-name" value="MEC Book Shop System">
+                        </div>
+                    </div>
+
+                    <button onclick="window.saveWebContent()" class="action-btn primary large" style="margin-top: 2rem;">📝 Update Site Content</button>
+                </div>
+            </div>
+
+            <!-- SEO & Analytics Sub-tab -->
+            <div id="web-dev-seo-view" class="sub-tab-view animate-fade" style="display: none;">
+                <div class="admin-form-v2">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div class="input-group">
+                            <label>SEO Keywords (Comma separated)</label>
+                            <input type="text" id="web-seo-keywords" placeholder="books, shop, stationery, online store">
+                        </div>
+                        <div class="input-group">
+                            <label>Google Analytics ID (GT-XXXXX)</label>
+                            <input type="text" id="web-analytics-id" placeholder="GT-12345678">
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                        <div class="input-group">
+                            <label>Facebook Pixel ID</label>
+                            <input type="text" id="web-pixel-id" placeholder="1234567890">
+                        </div>
+                        <div class="input-group">
+                            <label>Contact Phone (for WhatsApp link)</label>
+                            <input type="text" id="web-contact-phone" placeholder="+947XXXXXXXX">
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-top: 1.5rem;">
+                        <label>Meta Description for Search Engines</label>
+                        <textarea id="web-meta-desc" rows="3" placeholder="Briefly describe your shop for Google searches..."></textarea>
+                    </div>
+
+                    <button onclick="window.saveWebSEO()" class="action-btn primary large" style="margin-top: 2rem;">🔍 Save SEO & Analytics Settings</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customers Section (Previously 1413) -->
+    <section id="section-customers" class="admin-tab-content" style="display: none;">
+                <div class="sub-tab-nav">
+                    <button class="sub-tab active" data-section="customers" data-tab="list" onclick="showSubTab('customers', 'list')">Registered Customers</button>
+                    <button class="sub-tab" data-section="customers" data-tab="add" onclick="showSubTab('customers', 'add')">+ Register New Member</button>
+                </div>
+
+                <div id="customers-list-view" class="sub-tab-view">
+                    <div id="admin-customer-list"></div>
+                </div>
+
+                <div id="customers-add-view" class="sub-tab-view" style="display: none;">
+                    <div class="col-card" style="max-width: 500px;">
+                        <h3>Customer Registration</h3>
+                        <form id="customer-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Customer Name</label>
+                                <input type="text" id="cust-name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Phone Number</label>
+                                <input type="text" id="cust-phone" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Email (Optional)</label>
+                                <input type="email" id="cust-email">
+                            </div>
+                            <div class="input-group">
+                                <label>Address</label>
+                                <input type="text" id="cust-address">
+                            </div>
+                            <div class="input-group">
+                                <label>Customer Type</label>
+                                <select id="cust-type" onchange="window.generateCustomerID()">
+                                    <option value="retail">Retail Member</option>
+                                    <option value="loyalty">Loyalty Member</option>
+                                    <option value="wholesale">Wholesale Customer</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label id="cust-id-label">Loyalty / Card No</label>
+                                <input type="text" id="cust-id" placeholder="Auto-generating...">
+                            </div>
+                            <button type="submit" class="action-btn primary large">Complete Registration</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- HRM SECTION -->
+            <section id="section-hrm" class="admin-tab-content" style="display: none;">
+                <div class="hrm-header-actions"
+                    style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h2 style="margin:0;">Human Resource Management</h2>
+                        <p style="color:var(--text-muted); font-size:0.85rem;">Manage your team, attendance and monthly
+                            payroll</p>
+                    </div>
+                    <div class="hrm-sub-nav"
+                        style="display: flex; gap: 10px; background: #f1f5f9; padding: 5px; border-radius: 12px;">
+                        <button onclick="showHRMSubTab('employees')" id="hrm-btn-employees"
+                            class="sub-tab-btn active">Employees</button>
+                        <button onclick="showHRMSubTab('list')" id="hrm-btn-list"
+                            class="sub-tab-btn">Employee List</button>
+                        <button onclick="showHRMSubTab('attendance')" id="hrm-btn-attendance"
+                            class="sub-tab-btn">Attendance</button>
+                        <button onclick="showHRMSubTab('payroll')" id="hrm-btn-payroll" class="sub-tab-btn">Payroll
+                            Log</button>
+                    </div>
+                </div>
+
+                <!-- HRM Sub-Tabs -->
+                <div id="hrm-sub-employees" class="hrm-sub-content">
+                    <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                        <div class="col-card">
+                            <h3>Add New Staff</h3>
+                            <form id="employee-form" class="admin-form-v2">
+                                <div class="input-group">
+                                    <label>Staff Name</label>
+                                    <input type="text" id="emp-name" placeholder="Full Name" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Designation</label>
+                                    <select id="emp-role">
+                                        <option value="CEO / Founder">CEO / Founder</option>
+                                        <option value="Proprietor / Owner">Proprietor / Owner</option>
+                                        <option value="General Manager">General Manager</option>
+                                        <option value="Branch Manager">Branch Manager</option>
+                                        <option value="Assistant Manager">Assistant Manager</option>
+                                        <option value="Accountant">Accountant</option>
+                                        <option value="Sales Cashier">Sales Cashier</option>
+                                        <option value="Stock Keeper">Stock Keeper</option>
+                                        <option value="Inventory Manager">Inventory Manager</option>
+                                        <option value="Sales Representative">Sales Representative</option>
+                                        <option value="Marketing Executive">Marketing Executive</option>
+                                        <option value="Delivery Person">Delivery Person</option>
+                                        <option value="Technician / Repair Specialist">Technician / Repair Specialist</option>
+                                        <option value="Security Officer">Security Officer</option>
+                                        <option value="Multi-duty Staff">Multi-duty Staff</option>
+                                        <option value="Trainee">Trainee</option>
+                                        <option value="Other">Other Staff</option>
+                                    </select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Phone Number</label>
+                                    <input type="text" id="emp-phone" placeholder="Contact number" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Employee Register No</label>
+                                    <input type="text" id="emp-regno" placeholder="EMP-001">
+                                </div>
+                                <div class="input-group">
+                                    <label>Address</label>
+                                    <input type="text" id="emp-address" placeholder="Home Address">
+                                </div>
+                                <div class="input-group">
+                                    <label>Monthly Basic (LKR)</label>
+                                    <input type="number" id="emp-salary" value="0">
+                                </div>
+                                <div class="input-group">
+                                    <label>Sales Commission (%)</label>
+                                    <input type="number" id="emp-commission" value="0" step="0.1">
+                                </div>
+                                <div
+                                    style="margin: 1.5rem 0; padding: 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;">
+                                    <h4 style="margin: 0 0 10px 0; color: #92400e; font-size: 0.85rem;">System Access
+                                        Credentials</h4>
+                                    <div class="input-group">
+                                        <label>System Username</label>
+                                        <input type="text" id="emp-username" placeholder="Login name">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>System Password</label>
+                                        <input type="text" id="emp-password" placeholder="Password">
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Access Role</label>
+                                        <select id="emp-access-role">
+                                            <option value="none">No System Access (General Staff)</option>
+                                            <option value="Cashier">Cashier (POS & Orders Only)</option>
+                                            <option value="Sales_Manager">Sales Manager (Sales & CRM)</option>
+                                            <option value="Inventory_Manager">Inventory Manager (Full Warehouse)</option>
+                                            <option value="Store_Keeper">Store Keeper (Stock In Only)</option>
+                                            <option value="HR_Manager">HR Manager (Staff & Payroll)</option>
+                                            <option value="Junior_Accountant">Junior Accountant (Accounting)</option>
+                                            <option value="Finance_Manager">Finance Manager (Full Finance)</option>
+                                            <option value="IT_Manager">IT Manager (System & Security)</option>
+                                            <option value="RepairTech">Repair Technician (Repair Orders Only)</option>
+                                            <option value="Branch_Manager">Branch Manager (Local Control)</option>
+                                            <option value="Admin">System Administrator (All Features)</option>
+                                            <option value="CEO_Admin">CEO / Owner (Total System Control)</option>
+                                        </select>
+                                    </div>
+                                    <div class="input-group">
+                                        <label>Assigned Branch</label>
+                                        <select id="emp-branch-id" required>
+                                            <option value="Global">Master/Main Office</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button type="submit" class="action-btn primary large">Register Employee</button>
+                            </form>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                                <h3 style="margin: 0;">Active Employees</h3>
+                                <button id="clear-all-staff-btn" class="action-btn delete" style="display: none; padding: 0.8rem 1.5rem; border-radius: 12px; font-weight: 700; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca;" onclick="window.clearAllStaff()">
+                                    🚨 CLEAR ALL STAFF LOGINS
+                                </button>
+                            </div>
+                            <div id="admin-employee-list" class="employee-grid">
+                                <!-- Employee Cards -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hrm-sub-list" class="hrm-sub-content" style="display:none;">
+                    <div class="col-card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h3>Employee Detail List</h3>
+                            <button onclick="downloadEmployeeExcel()" class="action-btn" style="background: #10b981; color: white; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: bold; border: none;">
+                                📊 Download Excel
+                            </button>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Reg No</th>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>Address</th>
+                                        <th>System Username</th>
+                                        <th>System Password</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="employee-list-table-body">
+                                    <!-- Populated via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hrm-sub-attendance" class="hrm-sub-content" style="display:none;">
+                    <div class="col-card">
+                        <div
+                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                            <h3>Daily Attendance Log</h3>
+                            <input type="date" id="attendance-date-filter" onchange="syncAttendanceUI()">
+                        </div>
+                        <div id="attendance-list-container">
+                            <!-- Attendance logic -->
+                            <table class="admin-table">
+                                <thead>
+                                    <tr>
+                                        <th>Staff Name</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Entry Time</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="attendance-log-body"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="hrm-sub-payroll" class="hrm-sub-content" style="display:none;">
+                    <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                        <div class="col-card">
+                            <h3>Log Payroll Payment</h3>
+                            <form id="payroll-form" class="admin-form-v2">
+                                <div class="input-group">
+                                    <label>Select Staff</label>
+                                    <select id="pay-emp-id" required onchange="calculateStaffPayroll()"></select>
+                                </div>
+                                <div class="input-group">
+                                    <label>Payment For Month</label>
+                                    <input type="month" id="pay-month" required onchange="calculateStaffPayroll()">
+                                </div>
+                                <div id="payroll-calc-info"
+                                    style="margin-bottom: 1rem; padding: 1rem; background: #f0f9ff; border-radius: 12px; border: 1px solid #bae6fd; display: none;">
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Base Salary:</span>
+                                        <span id="calc-base-salary" style="font-weight: 700;">LKR 0.00</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Monthly Sales:</span>
+                                        <span id="calc-monthly-sales" style="font-weight: 700;">LKR 0.00</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                        <span>Commission Earned:</span>
+                                        <span id="calc-commission"
+                                            style="font-weight: 700; color: var(--success-green);">LKR 0.00</span>
+                                    </div>
+                                    <div
+                                        style="display: flex; justify-content: space-between; padding-top: 5px; border-top: 1px dashed #bae6fd; margin-top: 5px; font-weight: 900; color: var(--primary-blue);">
+                                        <span>Total Payable:</span>
+                                        <span id="calc-total-payable">LKR 0.00</span>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <label>Final Payout Amount (LKR)</label>
+                                    <input type="number" id="pay-amount" required>
+                                </div>
+                                <div class="input-group">
+                                    <label>Reference / Note</label>
+                                    <input type="text" id="pay-note" placeholder="Salary, Bonus etc.">
+                                </div>
+                                <button type="submit" class="action-btn primary large">Record Salary</button>
+                            </form>
+                        </div>
+                        <div class="col-card">
+                            <h3>Payment History</h3>
+                            <div id="admin-payroll-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BRANCHES SECTION -->
+            <section id="section-branches" class="admin-tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 350px 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Create New Branch</h3>
+                        <p>Register a new shop location to track sales and staff separately.</p>
+                        <form id="branch-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Branch Name</label>
+                                <input type="text" id="branch-name" placeholder="e.g. MEC Kandy Branch" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Location / City</label>
+                                <input type="text" id="branch-location" placeholder="e.g. Kandy Town" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Contact Number</label>
+                                <input type="text" id="branch-phone" placeholder="e.g. +94 81 123 4567">
+                            </div>
+                            <button type="submit" class="action-btn primary large">Create Branch</button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="content-header-actions" style="margin-bottom: 1rem;">
+                            <h3>Active Shop Branches</h3>
+                        </div>
+                        <div id="admin-branch-list" class="branch-grid">
+                            <!-- Branch Cards -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STORES SECTION (SUPER ADMIN ONLY) -->
+            <section id="section-stores" class="admin-tab-content" style="display: none;">
+                <div style="display: grid; grid-template-columns: 400px 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Onboard New Store</h3>
+                        <p>Create a dedicated POS environment for a new client.</p>
+                        <form id="store-form" class="admin-form-v2">
+                            <div class="input-group">
+                                <label>Store Name</label>
+                                <input type="text" id="store-name" placeholder="e.g. Kumara Stores" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Owner Name</label>
+                                <input type="text" id="store-owner" placeholder="Owner Full Name" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Phone / Contact</label>
+                                <input type="text" id="store-phone" placeholder="07x xxxxxxx" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Address</label>
+                                <input type="text" id="store-address" placeholder="Store Address" required>
+                            </div>
+                            <div class="input-group">
+                                <label>Store ID (Unique URL Slug)</label>
+                                <input type="text" id="store-slug" placeholder="e.g. kumara-stores" required>
+                            </div>
+                            <button type="submit" class="action-btn primary large">Provision Store</button>
+                        </form>
+                    </div>
+                    <div>
+                        <div class="content-header-actions" style="margin-bottom: 1rem;">
+                            <h3>Managed Merchants</h3>
+                        </div>
+                        <div id="admin-store-list" class="store-grid">
+                            <!-- Store cards rendered via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- IT & SYSTEM LOGS SECTION -->
+            <section id="section-it-system" class="admin-tab-content" style="display: none;">
+                <div class="it-header-actions" style="margin-bottom: 2rem;">
+                    <h2 style="margin:0;">System Administration & Security</h2>
+                    <p style="color:var(--text-muted); font-size:0.85rem;">Monitor system activity, user access logs, and core settings.</p>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div class="col-card">
+                        <h3>Activity Logs</h3>
+                        <div id="it-activity-logs" style="max-height: 500px; overflow-y: auto; background: #f8fafc; border-radius: 12px; padding: 1rem;">
+                            <div style="padding: 1rem; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem;">
+                                <span style="font-weight: 700; color: var(--primary-blue);">[SYSTEM]</span> Monitoring started. All systems operational.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-card">
+                        <h3>Security Overview</h3>
+                        <div style="display: grid; gap: 1rem;">
+                            <div class="stat-box info" style="border-left-width: 4px;">
+                                <div>
+                                    <h4>Active Sessions</h4>
+                                    <div class="val" id="it-active-sessions">1</div>
+                                </div>
+                            </div>
+                            <div class="stat-box success" style="border-left-width: 4px;">
+                                <div>
+                                    <h4>Database Sync</h4>
+                                    <div class="val" style="font-size: 1.2rem;">🟢 SECURE</div>
+                                </div>
+                            </div>
+                            <button class="action-btn" style="background:#002060; color:white; padding: 1rem; border-radius: 12px; font-weight: 700;">Generate Security Report</button>
+                            <a href="https://mec-book-shop.web.app/updates/MEC%20POS%20Setup%201.4.4.exe" class="action-btn" style="display:block; text-align:center; text-decoration:none; background:#0ea5e9; color:white; padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 0.5rem;">⬇️ Download Latest EXE (v1.4.4)</a>
+                            <button class="action-btn delete" style="padding: 1rem; border-radius: 12px; font-weight: 700; margin-top: 0.5rem;">🚨 Clear Recent Log Files</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- APPEARANCE & THEME SECTION -->
+            <section id="section-appearance" class="admin-tab-content" style="display: none;">
+                <div class="it-header-actions" style="margin-bottom: 2rem;">
+                    <h2 style="margin:0;">Visual Appearance</h2>
+                    <p style="color:var(--text-muted); font-size:0.85rem;">Choose a premium theme to personalize your merchant portal.</p>
+                </div>
+
+                <div class="theme-selection-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem;">
+                    <!-- Theme 1: Original -->
+                    <div class="theme-card" onclick="window.setAdminTheme('original')" style="cursor: pointer; border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow);">
+                        <div style="height: 120px; background: linear-gradient(135deg, #002060 0%, #00aeef 100%);"></div>
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0; color: #002060;">MEC Original</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 5px 0 15px 0;">The classic blue professional identity.</p>
+                            <div style="display: flex; gap: 8px;">
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #002060;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #00aeef;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #f3f4f6; border: 1px solid #ddd;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 2: Emerald -->
+                    <div class="theme-card" onclick="window.setAdminTheme('emerald')" style="cursor: pointer; border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow);">
+                        <div style="height: 120px; background: linear-gradient(135deg, #064e3b 0%, #10b981 100%);"></div>
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0; color: #064e3b;">Emerald-Pro</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 5px 0 15px 0;">Fresh and natural look for modern stores.</p>
+                            <div style="display: flex; gap: 8px;">
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #064e3b;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #10b981;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #f0fdf4; border: 1px solid #ddd;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 3: Crimson -->
+                    <div class="theme-card" onclick="window.setAdminTheme('crimson')" style="cursor: pointer; border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow);">
+                        <div style="height: 120px; background: linear-gradient(135deg, #7f1d1d 0%, #ef4444 100%);"></div>
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0; color: #7f1d1d;">Crimson-Lux</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 5px 0 15px 0;">Elegant ruby accents for luxury brands.</p>
+                            <div style="display: flex; gap: 8px;">
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #7f1d1d;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #ef4444;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #fef2f2; border: 1px solid #ddd;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Theme 4: Cyber -->
+                    <div class="theme-card" onclick="window.setAdminTheme('cyber')" style="cursor: pointer; border-radius: 20px; overflow: hidden; border: 2px solid #e2e8f0; background: white; transition: all 0.3s ease; box-shadow: var(--card-shadow);">
+                        <div style="height: 120px; background: linear-gradient(135deg, #0f172a 0%, #334155 100%);"></div>
+                        <div style="padding: 1.5rem;">
+                            <h3 style="margin: 0; color: #0f172a;">Cyber-Slate</h3>
+                            <p style="font-size: 0.85rem; color: #64748b; margin: 5px 0 15px 0;">Ultra-modern dark interface for high-tech focus.</p>
+                            <div style="display: flex; gap: 8px;">
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #0f172a;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #334155;"></span>
+                                <span style="width: 20px; height: 20px; border-radius: 50%; background: #1e293b; border: 1px solid #444;"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Modals -->
+    <div id="product-form-modal" class="admin-modal" style="display: none;">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Product Configuration</h2>
+                <button class="close-btn"
+                    onclick="document.getElementById('product-form-modal').style.display='none'">&times;</button>
+            </div>
+            <form id="product-form" class="modal-body admin-form-v2">
+                <div class="form-grid-3">
+                    <div class="input-group">
+                        <label>Product Name</label>
+                        <input type="text" id="p-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Short Code (SKU)</label>
+                        <input type="text" id="p-sku" placeholder="e.g. WF7043101">
+                    </div>
+                    <div class="input-group">
+                        <label>Category</label>
+                        <select id="p-category"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>Type / Mode</label>
+                        <select id="p-mode">
+                            <option value="Shop">🛒 Shop Stock</option>
+                            <option value="Warehouse">📦 Warehouse Stock</option>
+                            <option value="Cash">💵 Cash Sale</option>
+                            <option value="COD">🚚 COD Sale</option>
+                            <option value="Service">📄 Service (Print/Copy/Scan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid-3" style="margin-top: 15px;">
+                    <div class="input-group">
+                        <label>Discount (%)</label>
+                        <input type="number" id="p-discount" value="0">
+                    </div>
+                </div>
+
+                <div class="variant-toggle-box">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="p-has-variants" onchange="toggleVariantSection(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span>This product has variants (Sizes, Colors, etc.)</span>
+                </div>
+
+                <div id="variants-container" style="display:none;">
+                    <h4>Configure Variants</h4>
+                    <div id="variant-list"></div>
+                    <button type="button" onclick="addVariantField()" class="action-btn">+ Add Variant</button>
+                </div>
+
+                <div id="p-main-image-group">
+                    <div class="form-grid-3">
+                        <div class="input-group">
+                            <label>Retail Price (LKR)</label>
+                            <input type="number" id="p-price">
+                        </div>
+                        <div class="input-group">
+                            <label>Wholesale Price (LKR)</label>
+                            <input type="number" id="p-wholesale-price">
+                        </div>
+                        <div class="input-group">
+                            <label>Loyalty Price (LKR)</label>
+                            <input type="number" id="p-loyalty-price">
+                        </div>
+                        <div class="input-group">
+                            <label>Base Cost (LKR)</label>
+                            <input type="number" id="p-cost">
+                        </div>
+                        <div class="input-group">
+                            <label>Initial Stock</label>
+                            <input type="number" id="p-stock">
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Product Photo</label>
+                        <input type="file" id="p-image" onchange="previewMainImage(this, 'p-image-preview')">
+                        <div id="p-image-preview"></div>
+                    </div>
+                </div>
+
+                <div class="payment-methods-box">
+                    <h4>Allowed Payment Methods</h4>
+                    <label><input type="checkbox" id="p-pay-cod" checked> Cash on Delivery</label>
+                    <label><input type="checkbox" id="p-pay-bank" checked> Bank Transfer</label>
+                    <label><input type="checkbox" id="p-pay-shop" checked> Shop Pickup</label>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="action-btn primary large">Create Product & Publish</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- POS Invoice Dialog -->
+    <div id="pos-invoice-modal" class="admin-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <style>
+                @keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-10px); } }
+                @keyframes pulseGlow { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+            </style>
+            <div style="font-size: 3rem; margin-bottom: 1rem; animation: bounce 1s infinite alternate;">✅</div>
+            <h2 style="color: var(--primary-blue); margin-bottom: 0.5rem;">Payment Successful!</h2>
+            
+            <div id="pos-invoice-balance-box" style="background: #ecfdf5; border: 2px dashed #34d399; padding: 15px; border-radius: 12px; margin: 15px 0;">
+                <div style="font-weight: bold; color: #059669; font-size: 0.9rem;">BALANCE TO RETURN</div>
+                <div style="font-size: 2.2rem; font-weight: 800; color: #10b981; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    LKR <span id="invoice-final-balance">0.00</span>
+                    <span style="font-size: 1.5rem; animation: pulseGlow 1.5s infinite;">✨</span>
+                </div>
+            </div>
+
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">How would you like to share the invoice?</p>
+
+            <div style="display: grid; gap: 1rem;">
+                <button onclick="completeAndSharePOSSale('Print')" class="action-btn primary"
+                    style="padding: 1rem; font-size: 1.1rem;">📄 Print Receipt</button>
+                <button onclick="completeAndSharePOSSale('WhatsApp')" class="action-btn"
+                    style="padding: 1rem; font-size: 1.1rem; background: #25D366; color: white; border: none;">💬
+                    WhatsApp</button>
+                <button onclick="completeAndSharePOSSale('SMS')" class="action-btn"
+                    style="padding: 1rem; font-size: 1.1rem; background: #00aeef; color: white; border: none;">📱 SMS
+                    Billing</button>
+                <button onclick="completeAndSharePOSSale('Graphic')" class="action-btn"
+                    style="padding: 1rem; font-size: 1.1rem; background: #e30030; color: white; border: none; margin-top: 5px;">📸 Graphic Invoice</button>
+                <button onclick="completeAndSharePOSSale('Skip')" class="action-btn"
+                    style="background: #f1f5f9; color: #64748b; margin-top: 0.5rem;">Skip & Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- POS Payment Selection Modal -->
+    <div id="pos-payment-modal" class="admin-modal" style="display: none; z-index: 10050;">
+        <div class="modal-content" style="max-width: 450px; text-align: center;">
+            <div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 10px;">
+                <h2 style="margin: 0;">💳 Complete Payment</h2>
+                <button class="close-btn" onclick="document.getElementById('pos-payment-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body admin-form-v2" style="text-align: left; padding-top: 20px;">
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                    <span style="font-size: 0.9rem; color: #64748b; font-weight: bold;">TOTAL PAYABLE</span>
+                    <div style="font-size: 2.2rem; font-weight: 800; color: var(--primary-blue);">LKR <span id="pay-modal-payable">0.00</span></div>
+                </div>
+
+                <div class="input-group">
+                    <label style="font-size: 1.1rem; color: #0f172a; font-weight: bold;">Amount Tendered (LKR)</label>
+                    <input type="number" id="pay-modal-tendered" placeholder="0" oninput="calculateModalChange()" style="font-size: 2rem; font-weight: bold; text-align: center; padding: 15px; border: 2px solid var(--primary-blue);">
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px; margin-bottom: 25px; padding-top: 15px; border-top: 2px dashed #cbd5e1;">
+                    <span style="font-size: 1.2rem; font-weight: bold; color: #64748b;">Balance:</span>
+                    <span id="pay-modal-change" style="font-size: 1.8rem; font-weight: 800; color: #22c55e;">0.00</span>
+                </div>
+
+                <label style="font-weight: bold; margin-bottom: 10px; display: block; color: #334155;">Select Payment Method</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button class="action-btn" style="background:#22c55e; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('Cash')">💵 Cash</button>
+                    <button class="action-btn" style="background:#0ea5e9; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('Card')">💳 Card</button>
+                    <button class="action-btn" style="background:#f59e0b; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('Cheque')">📝 Cheque</button>
+                    <button class="action-btn" style="background:#ef4444; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('Credit')">⏳ Credit</button>
+                    <button class="action-btn" style="background:#f97316; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('COD')">🚚 COD</button>
+                    <button class="action-btn" style="background:#8b5cf6; color:white; font-size:1.1rem; padding:15px; font-weight:bold; border:none; border-radius:8px;" onclick="processPOSSale('Bank Transfer')">🏦 Bank</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Customer Registration Modal -->
+    <div id="quick-cust-modal" class="admin-modal" style="display: none; z-index: 11000;">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2>👤 New Customer Registration</h2>
+                <button class="close-btn" onclick="document.getElementById('quick-cust-modal').style.display='none'">&times;</button>
+            </div>
+            <form onsubmit="saveQuickPOSCustomer(event)" class="modal-body admin-form-v2">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="quick-cust-name" required>
+                </div>
+                <div class="input-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="quick-cust-phone" required>
+                </div>
+                <div class="input-group">
+                    <label>Address (Optional)</label>
+                    <input type="text" id="quick-cust-address">
+                </div>
+                <div class="input-group">
+                    <label>Registration Type</label>
+                    <select id="quick-cust-type">
+                        <option value="loyalty">💎 Loyalty Customer</option>
+                        <option value="wholesale">📦 Wholesale Customer</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="action-btn primary large">Register & Apply Loyalty</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Customer Edit Modal -->
+    <div id="customer-edit-modal" class="admin-modal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>📝 Edit Customer Details</h2>
+                <button class="close-btn" onclick="document.getElementById('customer-edit-modal').style.display='none'">&times;</button>
+            </div>
+            <form id="edit-customer-form" class="modal-body admin-form-v2">
+                <input type="hidden" id="edit-cust-id">
+                <div class="input-group">
+                    <label>Loyalty ID (Auto)</label>
+                    <input type="text" id="edit-cust-loyalty" readonly>
+                </div>
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <input type="text" id="edit-cust-name" required>
+                </div>
+                <div class="input-group">
+                    <label>Phone Number</label>
+                    <input type="text" id="edit-cust-phone" required>
+                </div>
+                <div class="input-group">
+                    <label>Email</label>
+                    <input type="email" id="edit-cust-email">
+                </div>
+                <div class="input-group">
+                    <label>Address</label>
+                    <input type="text" id="edit-cust-address">
+                </div>
+                <div class="input-group">
+                    <label>Customer Type</label>
+                    <select id="edit-cust-type">
+                        <option value="retail">Retail</option>
+                        <option value="loyalty">Loyalty</option>
+                        <option value="wholesale">Wholesale</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" form="edit-customer-form" class="action-btn primary large">Update Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="admin-modal" style="display: none;">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>Modify Product</h2>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <form id="edit-product-form" class="modal-body admin-form-v2">
+                <div class="input-group">
+                    <label>PRODUCT NAME (READONLY)</label>
+                    <input type="text" id="edit-p-name" readonly>
+                </div>
+                <div class="form-grid-3">
+                    <div class="input-group">
+                        <label>SHORT CODE (SKU)</label>
+                        <input type="text" id="edit-p-sku" placeholder="e.g. WF7043101">
+                    </div>
+                    <div class="input-group">
+                        <label>CATEGORY</label>
+                        <select id="edit-p-category"></select>
+                    </div>
+                    <div class="input-group">
+                        <label>TYPE / MODE</label>
+                        <select id="edit-p-mode">
+                            <option value="Shop">🛒 Shop Stock</option>
+                            <option value="Warehouse">📦 Warehouse Stock</option>
+                            <option value="Cash">💵 Cash Sale</option>
+                            <option value="COD">🚚 COD Sale</option>
+                            <option value="Service">📄 Service (Print/Copy/Scan)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="edit-p-base-fields" class="form-grid-3" style="margin-top: 15px;">
+                    <div class="input-group">
+                        <label>DISCOUNT (%)</label>
+                        <input type="number" id="edit-p-discount">
+                    </div>
+                    <div class="input-group">
+                        <label>BASE COST (LKR)</label>
+                        <input type="number" id="edit-p-cost">
+                    </div>
+                    <div class="input-group">
+                        <label>RETAIL PRICE (LKR)</label>
+                        <input type="number" id="edit-p-price">
+                    </div>
+                    <div class="input-group">
+                        <label>WHOLESALE PRICE (LKR)</label>
+                        <input type="number" id="edit-p-wholesale-price">
+                    </div>
+                    <div class="input-group">
+                        <label>LOYALTY PRICE (LKR)</label>
+                        <input type="number" id="edit-p-loyalty-price">
+                    </div>
+                    <div class="input-group">
+                        <label>STOCK QTY</label>
+                        <input type="number" id="edit-p-stock">
+                    </div>
+                </div>
+
+                <div class="variant-toggle-box">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="edit-p-has-variants"
+                            onchange="window.toggleEditVariantSection(this.checked)">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-weight: bold; color: var(--primary-blue);">Enable Product Variants (Size, Color, etc.)</span>
+                </div>
+
+                <div id="edit-variants-container" style="display:none; background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <h4 style="margin-top:0;">Manage Variants</h4>
+                    <div id="edit-variant-list"></div>
+                    <button type="button" onclick="window.addEditVariantField()" class="action-btn" style="background:#002060; color:white;">+ Add New Variant</button>
+                </div>
+
+                <div id="edit-p-main-image-group" style="background: #f8fafc; padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label>PRODUCT PHOTO</label>
+                        <input type="file" id="edit-p-image" onchange="window.previewMainImage(this, 'edit-p-image-preview')">
+                        <div id="edit-p-image-preview" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="payment-methods-box" style="margin-top: 20px; padding: 15px; border-top: 1px solid #eee;">
+                    <h4 style="margin-top:0; font-size: 0.9rem; color: #64748b;">ALLOWED PAYMENT METHODS</h4>
+                    <div style="display: flex; gap: 20px;">
+                        <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" id="edit-p-pay-cod"> COD</label>
+                        <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" id="edit-p-pay-bank"> Bank</label>
+                        <label style="display: flex; align-items: center; gap: 8px;"><input type="checkbox" id="edit-p-pay-shop"> Shop</label>
+                    </div>
+                </div>
+            </form>
+            <div class="modal-footer">
+                <button type="button" class="action-btn" onclick="closeEditModal()"
+                    style="background: #f1f5f9; color: #64748b; border: none;">Cancel</button>
+                <button type="submit" form="edit-product-form" class="action-btn primary">Update Product Information</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Printing Templates (Hidden) -->
+    <div id="printable-report" style="display:none; font-family: 'Courier New', Courier, monospace;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 20px;">
+            <h1 style="margin:0;" id="print-report-store-name">MEC BOOK SHOP</h1>
+            <p id="print-report-date"></p>
+        </div>
+        <div id="print-report-content"></div>
+    </div>
+
+    <!-- Repair Intake Modal -->
+    <div id="repair-intake-modal" class="admin-modal" style="display: none; z-index: 10001;">
+        <div class="modal-content wide">
+            <div class="modal-header">
+                <h2>🔧 Repair Intake Bill</h2>
+                <button class="close-btn" onclick="document.getElementById('repair-intake-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body admin-form-v2">
+                <h3 style="color:var(--primary-blue); margin-top:0; margin-bottom:15px; font-weight:800; font-size:1.1rem; border-bottom:1px solid #e2e8f0; padding-bottom:10px; display: flex; justify-content: space-between;">
+                    <span>Job ID: <span id="rep-job-id-display">Generating...</span></span>
+                </h3>
+                <div class="form-grid-3">
+                    <div class="input-group">
+                        <label>Customer Name</label>
+                        <input type="text" id="rep-cust-name" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Phone Number</label>
+                        <input type="text" id="rep-cust-phone" required>
+                    </div>
+                </div>
+                <div class="input-group" style="margin-top:15px;">
+                    <label>Item Description (Model/Type)</label>
+                    <input type="text" id="rep-item-desc" placeholder="e.g. Asus Laptop / Epson Printer" required>
+                </div>
+                <div class="input-group" style="margin-top:15px;">
+                    <label>Reported Issue / Fault</label>
+                    <textarea id="rep-issue" placeholder="Describe the problem..." rows="5" style="min-height: 100px; resize: vertical; padding: 10px;"></textarea>
+                </div>
+                <div class="form-grid-3" style="margin-top:15px;">
+                    <div class="input-group">
+                        <label>Estimated Cost (LKR)</label>
+                        <input type="number" id="rep-est-cost" value="0">
+                    </div>
+                    <div class="input-group">
+                        <label>Advance Payment (LKR)</label>
+                        <input type="number" id="rep-advance" value="0">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="action-btn" style="background:#ef4444; color:white; border:none; padding: 10px 15px; font-weight: bold; border-radius: 8px;" onclick="window.downloadRepairPDF()">📄 PDF Invoice</button>
+                    <button type="button" class="action-btn" style="background:#22c55e; color:white; border:none; padding: 10px 15px; font-weight: bold; border-radius: 8px;" onclick="window.shareRepairWhatsApp()">💬 WhatsApp</button>
+                </div>
+                <button type="button" class="action-btn primary large" onclick="window.generateRepairReceipt()">🖨️ Print Intake Receipt</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Real Calculator Modal -->
+    <div id="calc-modal" class="admin-modal" style="display: none; z-index: 10002;">
+        <div class="modal-content" style="max-width: 300px; padding:20px; text-align:center; background:#f8fafc; border-radius:15px;">
+            <div class="modal-header" style="padding-bottom:10px; border-bottom:none; display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="margin:0; color:var(--primary-blue);">🧮 Calculator</h3>
+                <button class="close-btn" onclick="document.getElementById('calc-modal').style.display='none'">&times;</button>
+            </div>
+            <input type="text" id="calc-display" readonly style="width:100%; height:50px; font-size:1.5rem; text-align:right; margin-bottom:15px; border-radius:8px; border:1px solid #e2e8f0; padding:10px; background:white; font-family:monospace;">
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('7')">7</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('8')">8</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('9')">9</button>
+                <button class="action-btn" style="background:#bae6fd; color:#0369a1; font-weight:bold;" onclick="calcInput('/')">÷</button>
+
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('4')">4</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('5')">5</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('6')">6</button>
+                <button class="action-btn" style="background:#bae6fd; color:#0369a1; font-weight:bold;" onclick="calcInput('*')">×</button>
+
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('1')">1</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('2')">2</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('3')">3</button>
+                <button class="action-btn" style="background:#bae6fd; color:#0369a1; font-weight:bold;" onclick="calcInput('-')">-</button>
+
+                <button class="action-btn" style="background:#fecaca; color:#991b1b; font-weight:bold;" onclick="calcClear()">C</button>
+                <button class="action-btn" style="background:#e2e8f0; color:#0f172a; font-weight:bold;" onclick="calcInput('0')">0</button>
+                <button class="action-btn" style="background:#0284c7; color:white; font-weight:bold;" onclick="calcResult()">=</button>
+                <button class="action-btn" style="background:#bae6fd; color:#0369a1; font-weight:bold;" onclick="calcInput('+')">+</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode/QR Scanner Modal -->
+    <div id="scanner-modal" class="admin-modal" style="display: none; z-index: 20000; align-items: center; justify-content: center;">
+        <div class="modal-content" style="max-width: 500px; width: 95%; position: relative; background: #000; padding: 0; border-radius: 20px; overflow: hidden;">
+            <div id="scanner-reader" style="width: 100%; aspect-ratio: 1/1;"></div>
+            <div style="position: absolute; bottom: 20px; left: 0; right: 0; display: flex; justify-content: center; gap: 15px; z-index: 10;">
+                <button onclick="toggleCamera()" class="action-btn" style="background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; padding: 10px 20px; font-weight: 800;">
+                    🔄 Switch Camera
+                </button>
+                <button onclick="closeScanner()" class="action-btn" style="background: #ef4444; color: white; border-radius: 50px; padding: 10px 25px; font-weight: 800;">
+                    Close
+                </button>
+            </div>
+            <div style="position: absolute; top: 15px; left: 0; right: 0; text-align: center; color: white; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">
+                Align Barcode / QR Code inside the box
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+    <audio id="notif-sound-web" src="/assets/sounds/new-order.mp3" preload="auto"></audio>
+    <audio id="notif-sound-pos" src="/assets/sounds/pos-save.mp3" preload="auto"></audio>
+
+    <script type="module" src="/src/admin.js"></script>
+    <script>
+        // Inline UI helpers
+        window.enterPOSFullscreen = function() {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            else if (el.msRequestFullscreen) el.msRequestFullscreen();
+            document.body.classList.add('pos-fullscreen-mode');
+        }
+        window.exitPOSFullscreen = function() {
+            if (document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement) {
+                if (document.exitFullscreen) document.exitFullscreen();
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                else if (document.msExitFullscreen) document.msExitFullscreen();
+            }
+            document.body.classList.remove('pos-fullscreen-mode');
+            if (typeof showTab === 'function') showTab('orders');
+        }
+
+        // Sync class if user presses ESC
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement) {
+                const wasPos = document.body.classList.contains('pos-fullscreen-mode');
+                document.body.classList.remove('pos-fullscreen-mode');
+                if (wasPos && typeof showTab === 'function') showTab('orders');
+            }
+        });
+        document.addEventListener('webkitfullscreenchange', () => {
+            if (!document.webkitFullscreenElement) {
+                const wasPos = document.body.classList.contains('pos-fullscreen-mode');
+                document.body.classList.remove('pos-fullscreen-mode');
+                if (wasPos && typeof showTab === 'function') showTab('orders');
+            }
+        });
+    </script>
+    <!-- Modern Graphic Invoice Modal -->
+    <div id="modern-invoice-modal" class="admin-modal" style="display: none; z-index: 25000; align-items: flex-start; padding-top: 30px; overflow-y: auto;">
+        <div class="modal-content wide" style="max-width: 950px; background: #e2e8f0; text-align: center; border-radius: 12px; margin: 0 auto 50px auto;">
+            <div class="modal-header" style="justify-content: space-between; border-bottom: 2px solid #cbd5e1; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin: 0; display: flex; align-items: center; gap: 10px;">📸 Graphic Invoice Formatter</h2>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="window.downloadModernInvoice('JPG')" class="action-btn" style="background: #e30030; color: white; border: none; font-weight: bold; border-radius: 8px;">💾 Download JPG</button>
+                    <button onclick="window.downloadModernInvoice('PDF')" class="action-btn" style="background: #2563eb; color: white; border: none; font-weight: bold; border-radius: 8px;">📄 Download PDF</button>
+                    <button class="close-btn" style="background: white; padding: 5px 15px; border-radius: 8px; font-weight: bold; border: 1px solid #ccc;" onclick="document.getElementById('modern-invoice-modal').style.display='none'">Close</button>
+                </div>
+            </div>
+
+            <!-- The A4 Scale Capture Container -->
+            <div class="modern-invoice-scroll-wrapper">
+                <div id="modern-invoice-capture-area" style="width: 210mm; min-height: 297mm; background: white; margin: 0 auto; box-shadow: 0 4px 15px rgba(0,0,0,0.1); position: relative; text-align: left; overflow: hidden; font-family: 'Arial', sans-serif; color: #333;">
+                
+                <!-- TOP HEADER SHAPES -->
+                <div style="position: absolute; top: 0; right: 0; width: 60%; height: 160px; background: #333; clip-path: polygon(25% 0, 100% 0, 100% 100%, 0 100%); z-index: 1;"></div>
+                <div id="mi-top-red" style="position: absolute; top: 0; right: 0; width: 63%; height: 160px; background: #e30030; clip-path: polygon(20% 0, 100% 0, 100% 40%, 10% 100%); z-index: 0;"></div>
+                
+                <div style="position: absolute; top: 40px; right: 40px; z-index: 2;">
+                    <h1 style="color: white; font-size: 3rem; margin: 0; font-weight: 900; letter-spacing: 2px;">INVOICE</h1>
+                </div>
+
+                <!-- LOGO CONFIG -->
+                <div style="padding: 40px 50px 0 50px; display: flex; align-items: center; gap: 15px; position:relative; z-index: 5;">
+                    <div id="mi-logo-container" style="width: 60px; height: 60px; background: #e30030; border-radius: 12px; display: flex; align-items: center; justify-content: center; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); overflow: hidden;">
+                        <span id="mi-logo-text" style="color: white; font-size: 2rem; font-weight: 800; font-family: Impact, sans-serif;">M</span>
+                        <img id="mi-logo-img" src="" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div>
+                        <h2 id="mi-store-name" style="margin: 0; font-size: 2.2rem; font-weight: 900; color: #222;">MEC Book Shop</h2>
+                        <span id="mi-store-tagline" style="font-size: 0.9rem; color: #666; font-weight: 600;">Creative Stationery & Bookstore</span>
+                    </div>
+                </div>
+
+                <!-- INV DETAILS -->
+                <div style="padding: 60px 50px 30px 50px; display: flex; justify-content: space-between;">
+                    <div>
+                        <div style="color: #666; font-size: 1rem; margin-bottom: 5px;">Invoice To:</div>
+                        <div id="mi-cust-name" style="color: #e30030; font-weight: 800; font-size: 1.4rem; text-transform: uppercase;">CUSTOMER NAME</div>
+                        <div id="mi-cust-role" style="color: #333; font-weight: 600; font-size: 0.95rem; margin-bottom: 10px;">Valued Customer</div>
+                        <div style="font-size: 0.95rem; color: #555; line-height: 1.6;">
+                            P: <span id="mi-cust-phone">+94 000 000 0000</span><br>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="background: #333; color: white; padding: 6px 15px; font-weight: bold; font-size: 1rem; display: inline-block; margin-bottom: 15px;">
+                            INVOICE NO: #<span id="mi-inv-no">000000</span>
+                        </div>
+                        <table style="border-collapse: collapse; text-align: left; float: right; font-size: 0.95rem;">
+                            <tr>
+                                <td style="padding-bottom: 5px; color: #666; padding-right: 20px;">Sales Rep</td>
+                                <td style="padding-bottom: 5px; font-weight: 600;" id="mi-rep">Staff</td>
+                            </tr>
+                            <tr>
+                                <td style="color: #666; padding-right: 20px;">Invoice Date</td>
+                                <td style="font-weight: 600;" id="mi-date">00 Xxx, 2026</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TABLE AREA -->
+                <div style="padding: 0 50px;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 1rem;">
+                        <thead>
+                            <tr style="color: white; font-weight: bold; text-align: center;">
+                                <td id="mi-th-1" style="background: #e30030; padding: 15px 20px; text-align: left; width: 45%;">Item description</td>
+                                <td style="background: #333; padding: 15px 10px; width: 15%;">Quantity</td>
+                                <td id="mi-th-2" style="background: #e30030; padding: 15px 10px; width: 20%;">Unit Price</td>
+                                <td style="background: #333; padding: 15px 10px; width: 20%;">Total Price</td>
+                            </tr>
+                        </thead>
+                        <tbody id="mi-table-body">
+                            <!-- Rows injected here -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- TOTALS -->
+                <div style="padding: 20px 50px; display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div style="width: 40%;">
+                        <!-- Left Block (Payment info space) -->
+                    </div>
+                    <div style="width: 45%;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 1rem;  text-align: right;">
+                            <tr>
+                                <td style="padding: 8px 10px; color: #333;">Sub Total</td>
+                                <td style="padding: 8px 10px; font-weight: bold;" id="mi-subtotal">Rs. 0.00</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 10px; color: #333;">Discount</td>
+                                <td style="padding: 8px 10px; font-weight: bold;" id="mi-discount">Rs. 0.00</td>
+                            </tr>
+                            <tr id="mi-tr-grand" style="background: #e30030; color: white;">
+                                <td style="padding: 12px 10px; font-weight: bold;">Grand Total</td>
+                                <td style="padding: 12px 10px; font-weight: bold; font-size: 1.1rem;" id="mi-grandtotal">Rs. 0.00</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- PAYMENT INFO & T&C -->
+                <div style="padding: 20px 50px 80px 50px; display: flex; justify-content: space-between;">
+                    <div style="width: 50%;">
+                        <h4 style="margin: 0 0 10px 0; color: #333; font-size: 1rem;">Payment method</h4>
+                        <table style="width: 100%; font-size: 0.9rem; color: #555; border-collapse: collapse;">
+                            <tr>
+                                <td style="padding-bottom: 5px; width: 80px;">Method</td>
+                                <td style="padding-bottom: 5px; font-weight: bold;" id="mi-paymethod">Cash</td>
+                            </tr>
+                        </table>
+                        <h4 style="margin: 20px 0 5px 0; color: #333; font-size: 0.95rem;">Terms & Conditions:</h4>
+                        <p style="margin: 0; font-size: 0.8rem; color: #777; line-height: 1.5;">Goods once sold cannot be returned or exchanged. Warranty conditions apply as per manufacturer terms. Thank you for your business!</p>
+                        <h4 style="margin: 20px 0 0 0; color: #333; font-size: 1rem;">Thanks for your business!</h4>
+                    </div>
+                    <div style="width: 40%; text-align: center; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 20px;">
+                        <div id="mi-auth-signatory" style="font-family: 'Brush Script MT', cursive; font-size: 2.5rem; color: #333; margin-bottom: -10px;">Manager</div>
+                        <div style="width: 80%; height: 1px; background: #333; margin-bottom: 5px;"></div>
+                        <div id="mi-auth-store" style="font-weight: 800; font-size: 1rem;">MEC BOOK SHOP</div>
+                        <div id="mi-auth-role" style="font-size: 0.8rem; color: #666;">Authorized Signatory</div>
+                    </div>
+                </div>
+
+                <!-- FOOTER STRIP -->
+                <div style="position: absolute; bottom: 30px; left: 0; width: 100%; padding: 0 50px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 600; color: #444; z-index: 5;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="background: #333; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px;">📞</span>
+                        <span id="mi-store-phone">+94 71 923 3388</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="mi-icon-email" style="background: #e30030; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px;">✉️</span>
+                        <span id="mi-store-email">mecbookshop@gmail.com</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="background: #333; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px;">📍</span>
+                        <span id="mi-store-address">No.97 Victoria Estate, Panadura Road, Munagama</span>
+                    </div>
+                </div>
+
+                <!-- BOTTOM SHAPES -->
+                <div style="position: absolute; bottom: 0; left: 0; width: 100%;">
+                    <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 25px; background: #333; z-index: 2;"></div>
+                    <div style="position: absolute; bottom: 0; left: 0; width: 45%; height: 60px; background: #e30030; clip-path: polygon(0 0, 80% 0, 100% 100%, 0 100%); z-index: 1;"></div>
+                    <div style="position: absolute; bottom: 0; right: 0; width: 60%; height: 60px; background: #e30030; clip-path: polygon(0 100%, 15% 0, 100% 0, 100% 100%); z-index: 1;"></div>
+                </div>
+            </div> <!-- End of modern-invoice-scroll-wrapper -->
+
+        </div>
+    </div>
+
+    <!-- POS Auth Modal -->
+    <div id="pos-auth-modal" class="modal" style="display: none; z-index: 10000; position: fixed; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background-color: #fefefe; margin: 15% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 400px; border-radius: 12px; text-align: center; position: relative;">
+            <span class="close" onclick="document.getElementById('pos-auth-modal').style.display='none'" style="position: absolute; right: 20px; top: 15px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer;">&times;</span>
+            <div style="font-size: 3rem; margin-bottom: 10px;">🔒</div>
+            <h2 style="color: var(--primary-blue); font-weight: 800; margin-bottom: 5px;">POS Access Restricted</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">You need Cashier or POS privileges to access this terminal. Try logging in with an authorized account.</p>
+        </div>
+    </div>
+    <!-- Repair Billing Modal -->
+    <div id="repair-billing-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 620px;">
+            <div class="modal-header">
+                <h2>Finalize Repair Bill</h2>
+                <button class="close-modal" onclick="document.getElementById('repair-billing-modal').style.display='none'">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: #64748b;">Convert Job <strong id="bill-rep-job-id" style="color: #002060;"></strong> into a POS Sale.</p>
+                <div class="admin-form-v2">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="input-group">
+                            <label>Service Charge (LKR)</label>
+                            <input type="number" id="bill-rep-service-charge" placeholder="0.00" oninput="window.updateRepairTotal()">
+                        </div>
+                        <div class="input-group">
+                            <label>Advance Paid (LKR)</label>
+                            <input type="number" id="bill-rep-advance" readonly>
+                        </div>
+                    </div>
+                    <div class="input-group" style="position: relative;">
+                        <label>Parts Used (Search Inventory)</label>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="bill-rep-part-search" placeholder="Type name or SKU..." oninput="window.searchPartsForRepair(this.value)">
+                        </div>
+                        <div id="bill-rep-part-results" class="floating-results" style="display:none;"></div>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 0.8rem; font-weight: 800; color: #64748b; text-transform: uppercase;">Selected Parts</label>
+                        <ul id="bill-rep-parts-list" style="list-style: none; padding: 0; margin-top: 10px;"></ul>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 20px; background: var(--primary-blue); color: white; display: flex; justify-content: space-between; align-items: center; border-radius: 0 0 24px 24px;">
+                <div>
+                    <div style="font-size: 0.8rem; opacity: 0.8;">TOTAL PAYABLE</div>
+                    <div style="font-size: 1.5rem; font-weight: 900;">LKR <span id="bill-rep-total">0.00</span></div>
+                </div>
+                <button class="action-btn" onclick="window.finalizeRepairPOSSale()" style="background: #fff; color: var(--primary-blue); font-weight: 800; padding: 12px 25px; border-radius: 10px;">🚀 COMPLETE BILL</button>
+            </div>
+        </div>
+    </div>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script type="module" src="/src/admin.js"></script>
+
+    <!-- Isolated Clock Script to prevent runtime errors in admin.js from breaking the clock -->
+    <script>
+        function startIsolatedClock() {
+            setInterval(() => {
+                const timeEl = document.getElementById('clock-time');
+                const dateEl = document.getElementById('clock-date');
+                const posTimeEl = document.getElementById('pos-clock-time');
+                const posDateEl = document.getElementById('pos-clock-date');
+                
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString();
+                const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                const posDateStr = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+
+                if (timeEl) timeEl.innerText = timeStr;
+                if (dateEl) dateEl.innerText = dateStr;
+                if (posTimeEl) posTimeEl.innerText = timeStr;
+                if (posDateEl) posDateEl.innerText = posDateStr;
+            }, 1000);
+            
+            // Initial call to set time immediately
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            const posDateStr = now.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+            
+            const timeEl = document.getElementById('clock-time');
+            const dateEl = document.getElementById('clock-date');
+            const posTimeEl = document.getElementById('pos-clock-time');
+            const posDateEl = document.getElementById('pos-clock-date');
+            
+            if (timeEl) timeEl.innerText = timeStr;
+            if (dateEl) dateEl.innerText = dateStr;
+            if (posTimeEl) posTimeEl.innerText = timeStr;
+            if (posDateEl) posDateEl.innerText = posDateStr;
+        }
+        
+        // Start immediately
+        startIsolatedClock();
+    </script>
+</body>
+</html>

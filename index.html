@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="page-title">MEC Book Shop System</title>
+  <meta name="description"
+    content="MEC Book Shop - Your premium destination for stationery, books, and printing services in Horana.">
+  <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#002060">
+</head>
+
+<body class="premium-full-bg">
+  <div class="blob-container">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
+  </div>
+  <div id="app" style="position: relative; z-index: 2;">
+    <header>
+      <nav>
+        <div class="mobile-menu-overlay" id="mobile-menu-overlay"></div>
+        <div class="logo">
+
+          <img src="/logo.png" alt="Logo" class="logo-img">
+          <span class="logo-text">MEC Book Shop</span>
+        </div>
+        <div class="header-right-mobile">
+          <a href="#cart" id="mobile-cart-trigger" class="mobile-cart-icon">
+            🛒
+            <span id="cart-count-mobile" class="cart-badge-mobile">0</span>
+          </a>
+          <div class="menu-toggle" id="menu-toggle">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <style>
+          @media (max-width: 768px) {
+            .header-right-mobile {
+              display: flex !important;
+            }
+
+            #menu-toggle {
+              margin-left: 0.5rem;
+            }
+
+            .logo span {
+              font-size: 1rem;
+            }
+          }
+        </style>
+        <ul id="nav-menu">
+          <li class="mobile-menu-header">
+            <div class="logo">
+              <img src="/logo.png" alt="Logo" class="logo-img">
+              <span class="logo-text">MEC Book Shop</span>
+            </div>
+            <button class="close-menu" id="close-menu">&times;</button>
+          </li>
+          <li class="search-item-nav">
+            <div class="search-container-nav">
+              <input type="text" id="store-search" placeholder="Search products..." class="nav-search-input">
+              <span class="search-icon-nav">🔍</span>
+            </div>
+          </li>
+          <li><a href="/">Home</a></li>
+          <li><a href="#products">Shop</a></li>
+          <li><a href="/track.html">Track Order</a></li>
+          <li id="nav-auth-item"><a href="/login.html">Login</a></li>
+          <li>
+            <a href="#cart" style="display: flex; align-items: center;">
+              Cart
+              <span id="cart-count">0</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <section id="hero">
+      <div class="hero-content">
+        <div id="greeting-box"
+          style="margin-bottom: 2rem; display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+          <div id="greeting-icon" class="animated-3d-icon"></div>
+          <h1 id="hero-title" style="margin-top: 0.5rem;">Welcome</h1>
+        </div>
+        <p id="hero-subtitle">Your premium shopping destination.</p>
+        <button id="shop-now-btn">Start Shopping</button>
+      </div>
+    </section>
+
+
+    <section id="shop-section">
+      <div class="shop-container">
+        <div class="category-menu-wrapper">
+          <aside class="category-sidebar">
+            <div class="sidebar-header">
+              <span class="sidebar-toggle-icon">☰</span> All Categories
+            </div>
+            <ul id="sidebar-category-list">
+              <!-- Categories will be injected here by JS -->
+            </ul>
+          </aside>
+
+          <!-- Mega Menu Container -->
+          <div id="mega-menu" class="mega-menu-panel">
+            <div class="mega-menu-content">
+              <div class="mega-sub-categories"
+                style="border-right: 1px solid rgba(255,255,255,0.1); padding-right: 2rem;">
+                <h4 style="color: var(--secondary-color); font-weight: 800;">CATEGORIES</h4>
+                <ul id="mega-category-links"></ul>
+              </div>
+              <div class="mega-recent-products">
+                <h4 style="color: var(--secondary-color); font-weight: 800;">RECENT PRODUCTS</h4>
+                <div id="mega-products-list"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <main class="shop-main">
+          <div class="mobile-category-bar" id="mobile-category-bar"></div>
+          <div id="product-grid-header"
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; position: relative; z-index: 1;">
+            <h2 id="featured-title" style="margin: 0; text-align: left; color: white;">Featured Collection</h2>
+            <select id="product-sort" class="sort-select"
+              style="font-size: 0.9rem; background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer; backdrop-filter: blur(10px);">
+              <option value="recommended" style="background: var(--primary-color);">Sort: Recommended</option>
+              <option value="az" style="background: var(--primary-color);">Sort: A to Z</option>
+              <option value="za" style="background: var(--primary-color);">Sort: Z to A</option>
+              <option value="low" style="background: var(--primary-color);">Price: Low to High</option>
+              <option value="high" style="background: var(--primary-color);">Price: High to Low</option>
+            </select>
+          </div>
+          <div id="product-grid"></div>
+          <div id="pagination-controls"
+            style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 3rem; flex-wrap: wrap;"></div>
+        </main>
+      </div>
+    </section>
+
+    <!-- Reviews Section -->
+    <section id="reviews" class="reviews-section">
+      <h2>🌟 Customer Reviews</h2>
+      <div id="reviews-container" class="reviews-grid">
+        <!-- Reviews will be loaded here -->
+        <p class="loading-text">Loading reviews...</p>
+      </div>
+    </section>
+
+    <!-- Product Details Modal -->
+    <div id="product-detail-overlay" class="modal-overlay"></div>
+    <div id="product-detail-modal" class="product-detail-modal">
+      <!-- Content injected by JS -->
+    </div>
+
+    <section id="services-contact" class="services-section">
+      <div class="services-header">
+        <h2>Your One-Stop Print & Copy Solutions</h2>
+        <div class="service-tags">
+          <span class="service-tag">Duplo Printing</span>
+          <span class="service-tag">Photocopying</span>
+          <span class="service-tag">Typesetting</span>
+          <span class="service-tag">Color & B/W Printing</span>
+          <span class="service-tag">Binding</span>
+          <span class="service-tag">Laminating</span>
+          <span class="service-tag">Scanning</span>
+        </div>
+      </div>
+
+      <div id="contact" class="contact-card">
+        <div class="contact-info">
+          <h3>Get in Touch</h3>
+          <p style="margin-bottom: 2.5rem; color: var(--text-light); font-size: 1.1rem;">We are here to help with all
+            your stationery and printing needs.</p>
+
+          <div class="contact-item">
+            <div class="icon">📍</div>
+            <div>
+              <div class="label">Store Location</div>
+              <div class="value">No 97, Victoria Estate,<br>Panadura Road, Munagama, Horana.</div>
+            </div>
+          </div>
+
+          <div class="contact-item">
+            <div class="icon">📞</div>
+            <div>
+              <div class="label">Call / WhatsApp</div>
+              <div class="value">
+                <a href="tel:0344399088" style="color: inherit; text-decoration: none;">034 439 9088</a> /
+                <a href="https://wa.me/94719233388" target="_blank" style="color: inherit; text-decoration: none;">071
+                  923 3388</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-item">
+            <div class="icon">✉️</div>
+            <div>
+              <div class="label">Official Email</div>
+              <div class="value"><a href="mailto:mecbookshop@gmail.com"
+                  style="color: inherit; text-decoration: none;">mecbookshop@gmail.com</a></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-card-right">
+          <div class="person-badge">
+            <span class="role">Owner</span>
+            <div class="name">Mr. W.P.M. Shamesh</div>
+          </div>
+
+          <div class="person-badge" style="margin-bottom: 0;">
+            <span class="role">Partner</span>
+            <div class="name">G.W.P. Maduwanthi</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p id="footer-copy">&copy; 2026 MEC Book Shop System. All rights reserved.</p>
+      <div style="margin-top: 1rem; display: flex; justify-content: center; gap: 2rem;">
+        <a href="/track.html" style="color: white; text-decoration: none; font-size: 0.9rem; opacity: 0.8;">My
+          Orders</a>
+      </div>
+    </footer>
+
+    <!-- Gemini Voice Assistant -->
+    <div class="gemini-assistant-container" id="gemini-assistant">
+      <div id="gemini-lang-toggle"
+        style="background:rgba(15,23,42,0.8); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); border-radius:10px; display:flex; gap:5px; padding:3px; font-size:0.6rem; font-weight:800; cursor:pointer; color:white; z-index:10001; margin-bottom:-10px; opacity:0.8;">
+        <span onclick="setAssistantLang('si-LK')" style="padding:2px 5px; border-radius:5px;">SI</span>
+        <span onclick="setAssistantLang('en-US')"
+          style="padding:2px 5px; border-radius:5px; background:var(--secondary-color);">EN</span>
+      </div>
+      <div class="gemini-message-bubble" id="gemini-bubble">Hi! How can I help you today?</div>
+      <div class="gemini-orb-wrapper" id="gemini-orb-btn">
+        <div class="gemini-orb"></div>
+        <div class="voice-bars">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,21 @@
+{
+  "projects": {
+    "default": "mec-book-shop"
+  },
+  "targets": {
+    "mec-book-shop": {
+      "hosting": {
+        "shop": [
+          "mec-book-shop"
+        ],
+        "platform": [
+          "mec-book-shop"
+        ],
+        "portal": [
+          "mec-pos-shop"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

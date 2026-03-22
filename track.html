@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Track Your Order - MEC Book Shop</title>
+
+</head>
+
+<body class="admin-page-wrapper">
+    <div class="track-container">
+        <div id="list-view">
+            <div class="track-page-header">
+                <h1 id="page-title">📋 My Orders</h1>
+                <p id="page-desc">Manage and track all your recent orders in one place.</p>
+            </div>
+
+            <div id="user-history-section">
+                <div id="history-list" class="orders-list">
+                    <p class="loading-text">Checking your account...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detail View Section -->
+        <div id="tracking-result" class="order-detail-card" style="display: none;">
+            <div class="detail-header">
+                <button id="back-btn" class="back-link">← Back to My Orders</button>
+                <div style="text-align: right;">
+                    <h3 id="res-order-id" class="order-id">ORD-XXXXXXXX</h3>
+                    <div id="res-date" class="order-meta">Loading date...</div>
+                </div>
+            </div>
+
+            <div class="detail-grid">
+                <div>
+                    <span id="res-status-badge" class="status-badge" data-status="Pending">PENDING</span>
+
+                    <div class="info-block" style="margin-top: 1.5rem;">
+                        <h4>Customer</h4>
+                        <div id="res-name" class="value">---</div>
+
+                        <h4>Items</h4>
+                        <div id="res-items-count" class="value">---</div>
+
+                        <h4>Total Amount</h4>
+                        <div class="price-display">LKR <span id="res-total">---</span></div>
+                        <p id="res-cod-row" class="timeline-desc"
+                            style="display:none; color: #ef4444; font-weight: bold;">
+                            Includes LKR <span id="res-cod">---</span> delivery charge
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-container">
+                    <div id="step-pending" class="timeline-step">
+                        <div class="timeline-label">Order Received</div>
+                        <div class="timeline-desc">We've received your order and it's being reviewed.</div>
+                    </div>
+                    <div id="step-processing" class="timeline-step">
+                        <div class="timeline-label">Processing</div>
+                        <div class="timeline-desc">Your items are being packed and prepared for dispatch.</div>
+                    </div>
+                    <div id="step-shipped" class="timeline-step">
+                        <div class="timeline-label">Shipped</div>
+                        <div class="timeline-desc">Your package is on its way to your delivery address.</div>
+                    </div>
+                    <div id="step-delivered" class="timeline-step">
+                        <div class="timeline-label">Delivered</div>
+                        <div class="timeline-desc">Order has been successfully delivered. Thank you!</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid rgba(0, 32, 96, 0.05);">
+                <h4 class="section-title">Product Details</h4>
+                <div id="res-items-list"></div>
+            </div>
+
+            <div style="margin-top: 2.5rem; display: flex; flex-direction: column; gap: 1rem;">
+                <button class="add-to-cart-btn" onclick="window.printFromTrack()"
+                    style="height: auto; padding: 1.25rem;">
+                    📥 Download Invoice (PDF)
+                </button>
+
+                <!-- Confirm Received Section -->
+                <div id="confirm-section" class="action-card success" style="display:none;">
+                    <h4>📦 Received your package?</h4>
+                    <p style="margin: 0.5rem 0 1.25rem; font-size: 0.85rem;">Please confirm once you have received your
+                        items safely.</p>
+                    <button onclick="window.confirmOrderReceived()" class="add-to-cart-btn"
+                        style="background: #22c55e; border: none; height: auto; padding: 1rem;">
+                        Confirm Delivery
+                    </button>
+                </div>
+
+                <!-- Review Section -->
+                <div id="review-section" class="action-card warning" style="display:none;">
+                    <h4>🌟 How was your experience?</h4>
+                    <div class="star-rating" style="margin: 1rem 0; font-size: 2rem; color: #fbbf24; cursor: pointer;">
+                        <span onclick="setRating(1)">★</span><span onclick="setRating(2)">★</span><span
+                            onclick="setRating(3)">★</span><span onclick="setRating(4)">★</span><span
+                            onclick="setRating(5)">★</span>
+                    </div>
+                    <textarea id="review-comment" placeholder="Tell us more about the products and our service..."
+                        class="track-input" style="width: 100%; margin-bottom: 1.25rem; min-height: 100px;"></textarea>
+                    <button onclick="window.submitReview()" class="add-to-cart-btn"
+                        style="background: var(--secondary-color); border: none; height: auto; padding: 1rem;">
+                        Submit Review
+                    </button>
+                    <p id="review-status" style="margin-top: 0.75rem; font-weight: 700; display: none;">✅ Thank you for
+                        your feedback!</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="printable-area" style="display:none;"></div>
+    </div>
+
+    <script type="module" src="/src/track.js"></script>
+</body>
+
+</html>

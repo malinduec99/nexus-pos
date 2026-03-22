@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<!-- v1.1.1 - ESM CSS Bundle -->
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register - MEC Book Shop</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="auth-page-wrapper premium-auth-bg">
+    <!-- Animated Background Blobs -->
+    <div class="blob-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="auth-glass-card anim-slide-up">
+        <div class="auth-header-3d">
+            <div class="logo-3d-wrapper">
+                <div class="logo-3d-circle">
+                    <img src="/logo.png" alt="MEC Logo" class="logo-3d-img">
+                </div>
+                <div class="logo-3d-ring"></div>
+            </div>
+            <a href="/" class="auth-back-home">← Back to Storefront</a>
+        </div>
+
+        <div class="auth-content">
+            <div class="auth-tabs-premium">
+                <button class="auth-tab-btn active" id="tab-login">Login</button>
+                <button class="auth-tab-btn" id="tab-register">Register</button>
+            </div>
+
+            <form id="login-form" class="auth-form-premium">
+                <div class="form-title-group">
+                    <h2>Welcome Back</h2>
+                    <p>Unlock your personalized MEC experience.</p>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Email Address</label>
+                    <div class="input-outer">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="login-email" name="email" class="premium-input" required
+                            placeholder="name@example.com" autocomplete="username">
+                    </div>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Secure Password</label>
+                    <div class="input-outer">
+                        <span class="input-icon">🔒</span>
+                        <input type="password" id="login-pass" name="password" class="premium-input" required
+                            placeholder="••••••••" autocomplete="current-password">
+                        <span class="password-toggle" id="toggle-login-pass">👁️</span>
+                    </div>
+                </div>
+
+                <div class="auth-options-row">
+                    <label class="remember-me-label">
+                        <input type="checkbox" id="remember-me">
+                        <span>Remember Me</span>
+                    </label>
+                </div>
+
+                <button type="submit" class="premium-submit-btn">
+                    <span>Continue to Shop</span>
+                    <span class="btn-shine"></span>
+                </button>
+
+                <div class="auth-extra-links">
+                    <a href="#" id="forgot-pass-link" class="premium-link">Lost password?</a>
+                </div>
+            </form>
+
+            <form id="register-form" class="auth-form-premium" style="display: none;">
+                <div class="form-title-group">
+                    <h2>Create Account</h2>
+                    <p>Join the MEC family and start shopping.</p>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Full Name</label>
+                    <div class="input-outer">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="reg-name" class="premium-input" required placeholder="Enter your name">
+                    </div>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Email Address</label>
+                    <div class="input-outer">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="reg-email" name="email" class="premium-input" required
+                            placeholder="name@example.com" autocomplete="email">
+                    </div>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Mobile Number</label>
+                    <div class="input-outer">
+                        <span class="input-icon">📞</span>
+                        <input type="tel" id="reg-phone" name="phone" class="premium-input" required
+                            placeholder="07XXXXXXXX">
+                    </div>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Create Password</label>
+                    <div class="input-outer">
+                        <span class="input-icon">🔑</span>
+                        <input type="password" id="reg-pass" name="password" class="premium-input" required
+                            placeholder="Min. 6 characters" autocomplete="new-password">
+                        <span class="password-toggle" id="toggle-reg-pass">👁️</span>
+                    </div>
+                </div>
+
+                <button type="submit" class="premium-submit-btn secondary">
+                    <span>Create My Account</span>
+                    <span class="btn-shine"></span>
+                </button>
+            </form>
+
+            <!-- Reset Password -->
+            <form id="reset-form" class="auth-form-premium" style="display: none;">
+                <div class="form-title-group">
+                    <h2>Restore Access</h2>
+                    <p>Enter your email to receive a reset link.</p>
+                </div>
+
+                <div class="input-field-group">
+                    <label class="premium-label">Registered Email</label>
+                    <div class="input-outer">
+                        <span class="input-icon">✉️</span>
+                        <input type="email" id="reset-email" class="premium-input" required
+                            placeholder="Enter your email">
+                    </div>
+                </div>
+
+                <button type="submit" class="premium-submit-btn">Reset Password</button>
+
+                <div class="auth-extra-links">
+                    <a href="#" id="back-to-login" class="premium-link">← Back to Login</a>
+                </div>
+            </form>
+
+            <p id="auth-msg" class="auth-status-msg"></p>
+        </div>
+    </div>
+
+    <script type="module" src="/src/auth.js"></script>
+</body>
+
+</html>
