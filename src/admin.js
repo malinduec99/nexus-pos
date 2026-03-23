@@ -305,11 +305,11 @@ function updateLoginBranding() {
     const splashText = document.querySelector('#splash-screen p');
     const loginImg = document.querySelector('.login-header img');
 
-    let brandName = window.storeInfo?.name || 'MEC POS';
+    let brandName = window.storeInfo?.name || 'NEXUS ERP';
     
     // Only show MEC Book Shop if it's explicitly set via URL/slug, otherwise use the universal brand
     const isExplicitMEC = sessionStorage.getItem('tempStoreSlug') === 'mec-nexus';
-    if (!window.storeInfo && !isExplicitMEC) brandName = 'MEC POS';
+    if (!window.storeInfo && !isExplicitMEC) brandName = 'NEXUS ERP';
 
     if (loginTitle) loginTitle.innerText = brandName;
     if (splashText) splashText.innerText = `Syncing with ${brandName}`;
@@ -544,7 +544,7 @@ function showAdminActions() {
 
         if (storeInfo) {
             window.storeInfo = storeInfo;
-            const brandName = storeInfo.name || 'MEC BOOK SHOP';
+            const brandName = storeInfo.name || 'NEXUS ERP';
             
             // Update Text
             document.querySelectorAll('.nav-brand .main, .login-header h2, #print-report-store-name').forEach(el => {

@@ -1,4 +1,4 @@
-﻿const { app, BrowserWindow, shell, Menu } = require('electron');
+const { app, BrowserWindow, shell, Menu } = require('electron');
 const path = require('path');
 const { autoUpdater } = require('electron-updater');
 
@@ -60,7 +60,7 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        title: "MEC POS",
+        title: "NEXUS ERP",
         icon: path.join(__dirname, 'public/logo.png'),
         webPreferences: {
             nodeIntegration: false,
