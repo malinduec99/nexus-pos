@@ -1214,21 +1214,44 @@ window.addStore = async (e) => {
     e.preventDefault();
     const name = document.getElementById('store-name').value;
     const owner = document.getElementById('store-owner').value;
+    const email = document.getElementById('store-email').value;
     const phone = document.getElementById('store-phone').value;
     const address = document.getElementById('store-address').value;
+    const plan = document.getElementById('store-plan').value;
     const slug = document.getElementById('store-slug').value.toLowerCase().replace(/\s+/g, '-');
 
     try {
-        await addDoc(storesCol, { shop_id: window.getShopId(),
-            name, owner, phone, address, slug,
+        // 1. Creation of Store Context
+        await addDoc(storesCol, { 
+            shop_id: '00001', // SuperAdmin meta-context (System-wide)
+            name, owner, phone, email, address, slug,
+            plan: plan || 'Free',
             status: 'active',
             createdAt: serverTimestamp()
         });
-        window.showToast(`Store "${name}" provisioned successfully!`, "success");
+
+        // 2. Automate Owner Profile creation for the NEW Shop
+        // Use the SLUG as the tenant shop_id for the owner
+        await addDoc(employeesCol, {
+            shop_id: slug,
+            name: owner,
+            role_access: 'Owner',
+            role: 'Proprietor / Owner',
+            username: email.toLowerCase(),
+            password: 'password123', // Default password
+            phone: phone,
+            address: address,
+            regno: 'OWNER-001',
+            salary: 0,
+            commission: 0,
+            timestamp: serverTimestamp()
+        });
+
+        window.showToast(`🚀 "${name}" provisioned and Owner account created!`, "success");
         e.target.reset();
     } catch (err) {
         console.error(err);
-        window.showToast("Deployment failed.", "error");
+        window.showToast("❌ Error provisioning store!", "error");
     }
 };
 
