@@ -125,9 +125,9 @@ window.showToast = (message, type = 'info') => {
     }, 5000);
 };
 
-// Admin Credentials
-const ADMIN_EMAIL = 'mecbookshop@gmail.com';
-const ADMIN_PASS = 'mec123';
+// Platform Administrator (ROOT)
+const ADMIN_EMAIL = 'admin@nexus.com';
+const ADMIN_PASS = 'nexus123';
 
 window.toggleLoginPassword = () => {
     const passInput = document.getElementById('login-password');
@@ -1741,7 +1741,7 @@ window.printOrderInvoice = (docId) => {
                 <span>LKR ${payable.toFixed(2)}</span>
             </div>
             <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #888;">
-                Thank you for your business!<br>v1.2.7 MEC Admin
+                Thank you for your business!<br>v1.5.3 NEXUS Administrator
             </div>
             <script>window.onload = () => { window.print(); window.close(); }</script>
         </body>
