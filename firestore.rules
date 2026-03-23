@@ -2,34 +2,67 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Helper to get active user's document
-    function getUserData() {
-      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+    // --- AUTH HELPERS ---
+    
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Helper to verify tenant isolation
-    function isTenant(shopId) {
-      return request.auth != null && (
-        shopId == '00001' || // MEC Book Shop fallback or master
-        (request.resource.data != null && request.resource.data.shop_id == shopId) ||
-        (resource != null && resource.data.shop_id == shopId)
-      );
+    // Try to get metadata from employees OR customers
+    function getUserMetadata() {
+      let isEmployee = exists(/databases/$(database)/documents/employees/$(request.auth.uid));
+      return isEmployee 
+        ? get(/databases/$(database)/documents/employees/$(request.auth.uid)).data 
+        : get(/databases/$(database)/documents/customers/$(request.auth.uid)).data;
     }
 
-    // Public Collections (Metadata)
+    function getRole() {
+      let data = getUserMetadata();
+      return data.role_access != null ? data.role_access : 'Customer';
+    }
+
+    function getUserShopId() {
+      return getUserMetadata().shop_id;
+    }
+
+    // --- PERMISSION CHECKS ---
+
+    function isSuperAdmin() {
+      return isAuthenticated() && getRole() == 'SuperAdmin';
+    }
+
+    function isOwner(shopId) {
+      let role = getRole();
+      return isAuthenticated() && (role == 'Owner' || role == 'SuperAdmin') && (shopId == getUserShopId() || role == 'SuperAdmin');
+    }
+
+    function isTenantResource(resourceShopId) {
+      return isAuthenticated() && (resourceShopId == getUserShopId() || isSuperAdmin());
+    }
+
+    // --- COLLECTION RULES ---
+
     match /stores/{store} {
       allow read: if true;
-      allow write: if request.auth != null; // Managed by SuperAdmin
+      allow write: if isSuperAdmin();
     }
 
-    // Tenant-Isolate Collections
+    match /employees/{employee} {
+      allow read: if isAuthenticated() && (request.auth.uid == employee || isOwner(resource.data.shop_id));
+      allow write: if isSuperAdmin() || (isOwner(request.resource.data.shop_id));
+    }
+
+    match /customers/{customer} {
+      allow read: if isAuthenticated() && (request.auth.uid == customer || isOwner(resource.data.shop_id));
+      allow write: if true; // Allow registration
+    }
+
     match /{collectionName}/{docId} {
-      allow read, write: if request.auth != null && 
-        (resource == null || resource.data.shop_id == '00001' || resource.data.shop_id != null);
-      
-      // Note: This is an interim permissive rule for the migration phase. 
-      // In production, we should lock it down to:
-      // allow read, write: if request.auth != null && resource.data.shop_id == getUserData().shop_id;
+      allow read, write: if isAuthenticated() && (
+        isSuperAdmin() || 
+        (request.resource != null && isTenantResource(request.resource.data.shop_id)) ||
+        (resource != null && isTenantResource(resource.data.shop_id))
+      );
     }
   }
 }

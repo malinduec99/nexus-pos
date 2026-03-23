@@ -1,7 +1,7 @@
 // [MANDATORY] Run .\MASTER_SYNC.bat after any changes to this file!
 import './admin-style.css';
 import { db, auth } from './firebase.js';
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "firebase/auth";
 import {
     collection,
     onSnapshot,
@@ -382,47 +382,81 @@ document.addEventListener('DOMContentLoaded', () => {
     window.setAdminTheme(savedTheme);
 });
 
-loginBtn?.addEventListener('click', () => {
-    const rawInput = document.getElementById('login-email').value;
-    const userInput = rawInput.trim().toLowerCase();
-    const passInput = document.getElementById('login-password').value;
+loginBtn?.addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-password').value;
 
-    console.log(`Login attempt: ${userInput}`);
-
-    // Master Support (Book Shop Owner OR Platform Manager)
-    const isMaster = (userInput === ADMIN_EMAIL && passInput === ADMIN_PASS) || (userInput === PLATFORM_ADMIN && passInput === PLATFORM_PASS);
-
-    if (isMaster) {
-        sessionStorage.setItem('isAdminLoggedIn', 'true');
-        sessionStorage.setItem('active_shop_id', '00001'); // Master Mec Shop
-        sessionStorage.setItem('userRole', 'SuperAdmin'); 
-        sessionStorage.setItem('userEmail', userInput);
-        sessionStorage.setItem('userName', 'Super Admin');
-        sessionStorage.setItem('userBranchId', 'Global');
-        showAdminActions();
-    } else {
-        // Check staff members
-        const staff = (window.allEmployees || []).find(e => e.username?.toLowerCase() === userInput && e.password === passInput);
-        if (staff && staff.role_access !== 'none') {
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+        const user = userCredential.user;
+        
+        // --- IDENTIFY: UID / Shop / Role ---
+        const employeesRef = collection(db, 'employees');
+        const q = query(employeesRef, where('username', '==', email.toLowerCase()));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+            const empData = snap.docs[0].data();
             sessionStorage.setItem('isAdminLoggedIn', 'true');
-            sessionStorage.setItem('active_shop_id', staff.shop_id || '00001'); // Use linked shop_id
-            sessionStorage.setItem('userRole', staff.role_access);
-            sessionStorage.setItem('userEmail', staff.username);
-            sessionStorage.setItem('userName', staff.name || staff.username);
-            sessionStorage.setItem('userId', staff.docId);
-            sessionStorage.setItem('userStoreId', staff.storeId || 'mec-nexus'); 
+            sessionStorage.setItem('active_shop_id', empData.shop_id || '00001');
+            sessionStorage.setItem('userRole', empData.role_access || 'Staff');
+            sessionStorage.setItem('userEmail', email);
+            sessionStorage.setItem('userName', empData.name || email);
+            sessionStorage.setItem('userId', user.uid);
+            
             showAdminActions();
         } else {
-            const errorMsg = document.getElementById('login-error');
+            // SuperAdmin Check (Fallback for master)
+            if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                sessionStorage.setItem('isAdminLoggedIn', 'true');
+                sessionStorage.setItem('active_shop_id', '00001');
+                sessionStorage.setItem('userRole', 'SuperAdmin');
+                showAdminActions();
+            } else {
+                alert("Unauthorized: Employee profile not found.");
+            }
+        }
+    } catch (error) {
+        console.error("Auth Fail:", error);
+        const errorMsg = document.getElementById('login-error');
+        if (errorMsg) {
+            errorMsg.innerText = "Invalid Credentials - " + error.code;
             errorMsg.style.display = 'block';
             setTimeout(() => errorMsg.style.display = 'none', 3000);
         }
     }
 });
 
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        // Auto-Identify on reload
+        const employeesRef = collection(db, 'employees');
+        const q = query(employeesRef, where('username', '==', user.email.toLowerCase()));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
+            const empData = snap.docs[0].data();
+            sessionStorage.setItem('active_shop_id', empData.shop_id || '00001');
+            sessionStorage.setItem('userRole', empData.role_access || 'Staff');
+            sessionStorage.setItem('userName', empData.name || user.email);
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+        } else if (user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+             sessionStorage.setItem('userRole', 'SuperAdmin');
+             sessionStorage.setItem('active_shop_id', '00001');
+             sessionStorage.setItem('isAdminLoggedIn', 'true');
+        }
+        
+        if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+            showAdminActions();
+        }
+    }
+});
+
 logoutBtn?.addEventListener('click', () => {
-    sessionStorage.removeItem('isAdminLoggedIn');
-    location.reload();
+    signOut(auth).then(() => {
+        sessionStorage.clear();
+        location.reload();
+    });
 });
 
 function applyRolePermissions(role) {
