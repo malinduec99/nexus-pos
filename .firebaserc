@@ -9,10 +9,10 @@
           "mec-nexus"
         ],
         "platform": [
-          "mec-nexus"
+          "mec-nexus-erp"
         ],
         "portal": [
-          "mec-pos-shop"
+          "mec-portal"
         ]
       }
     }

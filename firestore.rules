@@ -1,9 +1,35 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if true;
+    
+    // Helper to get active user's document
+    function getUserData() {
+      return get(/databases/$(database)/documents/employees/$(request.auth.uid)).data;
+    }
+
+    // Helper to verify tenant isolation
+    function isTenant(shopId) {
+      return request.auth != null && (
+        shopId == '00001' || // MEC Book Shop fallback or master
+        (request.resource.data != null && request.resource.data.shop_id == shopId) ||
+        (resource != null && resource.data.shop_id == shopId)
+      );
+    }
+
+    // Public Collections (Metadata)
+    match /stores/{store} {
+      allow read: if true;
+      allow write: if request.auth != null; // Managed by SuperAdmin
+    }
+
+    // Tenant-Isolate Collections
+    match /{collectionName}/{docId} {
+      allow read, write: if request.auth != null && 
+        (resource == null || resource.data.shop_id == '00001' || resource.data.shop_id != null);
+      
+      // Note: This is an interim permissive rule for the migration phase. 
+      // In production, we should lock it down to:
+      // allow read, write: if request.auth != null && resource.data.shop_id == getUserData().shop_id;
     }
   }
 }

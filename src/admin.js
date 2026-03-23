@@ -1,4 +1,4 @@
-﻿// [MANDATORY] Run .\MASTER_SYNC.bat after any changes to this file!
+// [MANDATORY] Run .\MASTER_SYNC.bat after any changes to this file!
 import './admin-style.css';
 import { db, auth } from './firebase.js';
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -425,55 +425,73 @@ logoutBtn?.addEventListener('click', () => {
     location.reload();
 });
 
+function applyRolePermissions(role) {
+    const superAdminOnly = ['tab-stores'];
+    const adminOnly = ['tab-it-system', 'tab-hrm', 'tab-branches', 'tab-appearance', 'tab-web-dev', 'tab-reports', 'tab-expenses', 'tab-income', 'tab-credit', 'tab-suppliers', 'tab-purchases'];
+    if (role === 'SuperAdmin') {
+        superAdminOnly.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'flex'; });
+    } else {
+        superAdminOnly.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    }
+    if (role === 'Staff') {
+        adminOnly.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+        const branchWrap = document.getElementById('branch-selector-wrapper');
+        if (branchWrap) branchWrap.style.display = 'none';
+    } else {
+        adminOnly.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'flex'; });
+        const branchWrap = document.getElementById('branch-selector-wrapper');
+        if (branchWrap) branchWrap.style.display = 'block';
+    }
+}
+
 function showAdminActions() {
     if (loginSection) loginSection.style.display = 'none';
     if (adminActions) adminActions.style.display = 'block';
     
-    const currentRole = sessionStorage.getItem('userRole') || 'Admin';
+    const currentRole = sessionStorage.getItem('userRole') || 'Staff';
     
     const profileTrigger = document.getElementById('profile-trigger');
     if (profileTrigger) profileTrigger.style.display = 'block';
 
-    updateUserDisplay();
-
-
-
-    // Role-Based Navigation Filtering
-    const rolePermissions = {
-        'SuperAdmin': ['orders', 'pos', 'products', 'stock', 'categories', 'reports', 'expenses', 'purchases', 'income', 'suppliers', 'customers', 'repairs', 'hrm', 'branches', 'stores', 'it-system', 'appearance', 'web-dev', 'credit'],
-        'CEO_Admin': ['orders', 'pos', 'products', 'stock', 'categories', 'reports', 'expenses', 'purchases', 'income', 'suppliers', 'customers', 'repairs', 'hrm', 'branches', 'it-system', 'appearance', 'web-dev', 'credit'],
-        'Admin': ['orders', 'pos', 'products', 'stock', 'categories', 'reports', 'expenses', 'purchases', 'income', 'suppliers', 'customers', 'repairs', 'hrm', 'branches', 'it-system', 'appearance', 'web-dev', 'credit'],
-        'IT_Manager': ['it-system', 'branches', 'hrm'],
-        'Finance_Manager': ['reports', 'expenses', 'income', 'purchases', 'suppliers', 'orders', 'hrm', 'credit'],
-        'Junior_Accountant': ['reports', 'expenses', 'income', 'purchases'],
-        'HR_Manager': ['hrm'],
-        'Inventory_Manager': ['products', 'stock', 'categories', 'suppliers', 'purchases'],
-        'Store_Keeper': ['stock', 'products', 'categories'],
-        'Sales_Manager': ['orders', 'customers', 'reports', 'pos', 'credit'],
-        'Cashier': ['pos', 'orders', 'customers', 'repairs', 'credit'],
-        'RepairTech': ['repairs', 'pos'],
-        'Branch_Manager': ['pos', 'orders', 'products', 'stock', 'hrm', 'reports'],
-        'Web_Developer': ['web-dev', 'appearance', 'it-system'],
-        // Legacy Support
-        'HR': ['hrm'],
-        'Accountant': ['reports', 'expenses', 'income', 'purchases', 'suppliers', 'orders', 'repairs', 'credit'],
-        'Stock': ['products', 'stock', 'categories', 'suppliers']
-    };
-
-    const allowedTabs = rolePermissions[currentRole] || [];
-    window.allowedTabs = allowedTabs; // Expose globally for showTab
+    // UI Tab Visibility
+    applyRolePermissions(currentRole);
     
+    // SaaS Role Mapping for Tab Security
+    const roleMap = {
+        'SuperAdmin': ['orders', 'pos', 'products', 'stock', 'categories', 'reports', 'expenses', 'purchases', 'income', 'suppliers', 'customers', 'repairs', 'hrm', 'branches', 'stores', 'it-system', 'appearance', 'web-dev', 'credit'],
+        'Owner': ['orders', 'pos', 'products', 'stock', 'categories', 'reports', 'expenses', 'purchases', 'income', 'suppliers', 'customers', 'repairs', 'hrm', 'branches', 'it-system', 'appearance', 'web-dev', 'credit'],
+        'Staff': ['pos', 'orders', 'customers', 'repairs']
+    };
+    window.allowedTabs = roleMap[currentRole] || ['pos'];
+
+    // Tab Visibility & Security Initialization
     document.querySelectorAll('.nav-tab').forEach(btn => {
         const tabId = btn.id.replace('tab-', '');
-        if (allowedTabs.includes(tabId) || tabId === 'pos') { // ALWAYS show POS tab
+        if (window.allowedTabs.includes(tabId) || tabId === 'pos') {
             btn.style.display = 'flex';
         } else {
             btn.style.display = 'none';
         }
     });
 
-    // Default Tab
-    showTab(allowedTabs[0] || 'pos');
+    // Navigation Landing
+    if (currentRole === 'Staff') {
+        showTab('pos');
+    } else {
+        const lastTab = sessionStorage.getItem('last_active_tab');
+        if (lastTab && window.allowedTabs.includes(lastTab)) {
+            showTab(lastTab);
+        } else {
+            showTab(window.allowedTabs[0] || 'orders');
+        }
+    }
+
+    updateUserDisplay();
+    initDashboard();
+
+    // Data Listeners Persistence
+    if (window.isListenersStarted) return;
+    window.isListenersStarted = true;
 
     // Load Stores
     onSnapshot(window.withShop(storesCol), (snapshot) => {
