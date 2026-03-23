@@ -4,6 +4,36 @@
   },
   "hosting": [
     {
+      "target": "shop",
+      "public": "dist",
+      "cleanUrls": true,
+      "trailingSlash": false,
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "redirects": [],
+      "rewrites": [
+        {
+          "source": "/admin/**",
+          "destination": "/admin.html"
+        },
+        {
+          "source": "/track/**",
+          "destination": "/track.html"
+        },
+        {
+          "source": "/login",
+          "destination": "/login.html"
+        },
+        {
+          "source": "/**",
+          "destination": "/index.html"
+        }
+      ]
+    },
+    {
       "target": "platform",
       "public": "dist",
       "cleanUrls": true,
